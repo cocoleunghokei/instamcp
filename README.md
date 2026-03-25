@@ -6,6 +6,14 @@ A web app that crawls your Instagram saved posts, uses Claude AI to filter out M
 
 ---
 
+## Screenshots
+
+| Crawl Dashboard | Skill Library |
+|---|---|
+| ![Crawl Dashboard](assets/crawl-dashboard.png) | ![Skill Library](assets/skill-library.png) |
+
+---
+
 ## What it does
 
 1. **Crawls** your Instagram saved posts using a Playwright-based session scraper
