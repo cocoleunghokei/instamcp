@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InstaMCP | Crawl Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface": "#081425",
+          "surface-dim": "#081425",
+          "on-error": "#690005",
+          "tertiary-container": "#ef6719",
+          "surface-container-highest": "#2a3548",
+          "secondary-container": "#3e495d",
+          "on-tertiary-fixed": "#351000",
+          "surface-bright": "#2f3a4c",
+          "inverse-on-surface": "#263143",
+          "tertiary-fixed-dim": "#ffb595",
+          "primary": "#adc6ff",
+          "primary-container": "#4b8eff",
+          "secondary-fixed": "#d8e3fb",
+          "on-tertiary": "#571e00",
+          "on-secondary-fixed": "#111c2d",
+          "primary-fixed": "#d8e2ff",
+          "surface-container-lowest": "#040e1f",
+          "error-container": "#93000a",
+          "on-surface": "#d8e3fb",
+          "tertiary": "#ffb595",
+          "on-background": "#d8e3fb",
+          "inverse-primary": "#005bc1",
+          "on-primary": "#002e69",
+          "background": "#081425",
+          "on-tertiary-container": "#4c1a00",
+          "error": "#ffb4ab",
+          "on-surface-variant": "#c1c6d7",
+          "on-tertiary-fixed-variant": "#7c2e00",
+          "surface-tint": "#adc6ff",
+          "surface-container": "#152031",
+          "on-secondary-fixed-variant": "#3c475a",
+          "inverse-surface": "#d8e3fb",
+          "secondary": "#bcc7de",
+          "surface-container-high": "#1f2a3c",
+          "on-primary-fixed-variant": "#004493",
+          "on-primary-container": "#00285c",
+          "tertiary-fixed": "#ffdbcc",
+          "on-secondary-container": "#aeb9d0",
+          "surface-container-low": "#111c2d",
+          "surface-variant": "#2a3548",
+          "secondary-fixed-dim": "#bcc7de",
+          "on-secondary": "#263143",
+          "on-primary-fixed": "#001a41",
+          "outline-variant": "#414755",
+          "on-error-container": "#ffdad6",
+          "primary-fixed-dim": "#adc6ff",
+          "outline": "#8b90a0"
+        },
+        fontFamily: {
+          "headline": ["Manrope"],
+          "body": ["Inter"],
+          "label": ["Inter"]
+        },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .glass-effect {
+    background: rgba(42, 53, 72, 0.7);
+    backdrop-filter: blur(12px);
+  }
+  body {
+    background-color: #081425;
+    color: #d8e3fb;
+  }
+  /* Pulse animation for active crawl state */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+  /* Progress bar animation */
+  @keyframes progress-fill {
+    from { width: 0%; }
+    to { width: var(--progress-width); }
+  }
+  .progress-bar { transition: width 0.6s ease; }
+</style>
+</head>
+<body class="font-body selection:bg-primary/30">
+
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#111C2D] flex justify-between items-center px-8 h-16">
+  <div class="flex items-center gap-8">
+    <span class="text-xl font-black text-[#ADC6FF] tracking-tighter font-headline">InstaMCP</span>
+    <div class="hidden md:flex gap-6 items-center">
+      <a class="font-headline font-bold tracking-tight text-[#ADC6FF] border-b-2 border-[#ADC6FF] pb-1" href="index.html">Crawl</a>
+      <a class="font-headline font-bold tracking-tight text-[#414755] hover:text-[#ADC6FF] transition-colors" href="library.html">Library</a>
+      <a class="font-headline font-bold tracking-tight text-[#414755] hover:text-[#ADC6FF] transition-colors" href="settings.html">Settings</a>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <button onclick="startCrawl()" class="px-5 py-2 bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-bold rounded-full text-sm hover:scale-[1.02] transition-transform active:scale-95 shadow-lg shadow-primary/20">
+      New Crawl
+    </button>
+    <button class="p-2 text-[#414755] hover:text-[#ADC6FF] transition-colors rounded-full active:scale-95">
+      <span class="material-symbols-outlined">account_circle</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Main Content Canvas -->
+<main class="pt-24 px-8 pb-12 min-h-screen">
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div class="space-y-2">
+        <h1 class="text-4xl font-black font-headline tracking-tighter text-on-surface">Data Crawler</h1>
+        <p class="text-on-surface-variant max-w-md">Extracting high-fidelity intelligence from saved media architecture.</p>
+      </div>
+      <div class="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-xl text-sm text-outline">
+        <span class="material-symbols-outlined text-sm">history</span>
+        <span>Last Crawled: <span class="text-primary font-medium" id="last-crawled">Never</span></span>
+      </div>
+    </header>
+
+    <!-- Bento Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+      <!-- Primary: Fetch Saved Posts -->
+      <section class="md:col-span-8 bg-surface-container-low rounded-xl p-8 relative overflow-hidden">
+        <div class="relative z-10 flex flex-col h-full justify-between">
+          <div>
+            <div class="flex items-center gap-3 mb-6">
+              <div class="bg-primary/20 p-2 rounded-lg">
+                <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">download</span>
+              </div>
+              <span class="text-[10px] font-bold tracking-widest uppercase text-outline">Active Engine</span>
+            </div>
+            <h2 class="text-3xl font-bold font-headline mb-4">Fetch Saved Posts</h2>
+            <p class="text-on-surface-variant max-w-sm mb-8">Synchronize your local library with Instagram saves to identify new AI trends and MCP tools.</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-6">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] uppercase tracking-wider text-outline font-bold">Date Range</label>
+              <div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-lg border border-outline-variant/20 cursor-pointer hover:border-primary/40 transition-colors">
+                <span class="material-symbols-outlined text-sm text-primary">calendar_today</span>
+                <span class="text-sm" id="date-range">Last 30 days</span>
+                <span class="material-symbols-outlined text-sm text-outline">expand_more</span>
+              </div>
+            </div>
+            <button onclick="startCrawl()" id="sync-btn" class="mt-4 md:mt-0 px-8 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95">
+              Initialize Sync
+            </button>
+          </div>
+        </div>
+        <!-- Decorative bg -->
+        <div class="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
+          <svg class="h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+            <path d="M0 100 C 20 0 50 0 100 100" fill="none" stroke="#ADC6FF" stroke-width="0.5"/>
+            <path d="M0 100 C 30 20 60 20 100 100" fill="none" stroke="#ADC6FF" stroke-width="0.5"/>
+            <path d="M0 100 C 40 40 70 40 100 100" fill="none" stroke="#ADC6FF" stroke-width="0.5"/>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Status & Progress -->
+      <section class="md:col-span-4 flex flex-col gap-6">
+        <div class="bg-surface-container-lowest rounded-xl p-6 border-l-2 border-primary">
+          <div class="flex justify-between items-start mb-4">
+            <span class="text-xs font-bold uppercase tracking-widest text-outline">Live Progress</span>
+            <span id="status-badge" class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded font-mono">IDLE</span>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-end">
+              <span class="text-2xl font-bold font-headline" id="progress-pct">0%</span>
+              <span class="text-xs text-outline" id="queue-count">Queue: 0 items</span>
+            </div>
+            <div class="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+              <div id="progress-bar" class="progress-bar h-full bg-primary shadow-[0_0_10px_#ADC6FF]" style="width: 0%"></div>
+            </div>
+            <p id="status-msg" class="text-[11px] text-outline leading-relaxed italic">System ready for packet inspection...</p>
+          </div>
+        </div>
+        <div class="bg-surface-container-low rounded-xl p-6 flex-1">
+          <h3 class="font-bold text-sm mb-3">Network Health</h3>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+            <span class="text-xs text-on-surface">Instagram API: Connected</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+            <span class="text-xs text-on-surface">Claude AI: Ready</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary Section -->
+      <section class="md:col-span-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Metrics -->
+        <div class="lg:col-span-1 bg-surface-container-low rounded-xl p-6 space-y-8">
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-outline mb-4 block">Session Summary</span>
+            <div class="grid grid-cols-2 gap-4">
+              <div class="p-4 bg-surface-container-lowest rounded-lg">
+                <p class="text-xs text-outline mb-1">Total Crawled</p>
+                <p class="text-2xl font-bold font-headline" id="total-crawled">—</p>
+              </div>
+              <div class="p-4 bg-surface-container-lowest rounded-lg">
+                <p class="text-xs text-outline mb-1">AI Identified</p>
+                <p class="text-2xl font-bold font-headline text-tertiary" id="ai-identified">—</p>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-on-surface">Relevance Score</span>
+              <span class="text-primary font-bold" id="relevance-score">—</span>
+            </div>
+            <div class="flex gap-1 h-2">
+              <div id="relevance-bar" class="bg-primary rounded-l-full transition-all duration-700" style="width: 0%"></div>
+              <div id="relevance-bar-bg" class="bg-surface-container-highest rounded-r-full transition-all duration-700" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="lg:col-span-2 bg-surface-container-high rounded-xl p-8 relative overflow-hidden border-l-2 border-primary">
+          <div class="absolute top-0 right-0 p-4">
+            <span class="material-symbols-outlined text-primary/20 text-6xl select-none">auto_awesome</span>
+          </div>
+          <h3 class="text-xl font-bold font-headline mb-6 flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary">insights</span>
+            Latest Discoveries Summary
+          </h3>
+          <div id="insights-content" class="space-y-6">
+            <div class="flex gap-4">
+              <div class="flex-shrink-0 w-1 bg-outline-variant/30 rounded-full"></div>
+              <p class="text-on-surface-variant leading-relaxed text-sm italic">
+                Run your first crawl to see AI-identified MCP tools and skills from your Instagram saves.
+              </p>
+            </div>
+          </div>
+          <div class="mt-8 flex items-center justify-end">
+            <a href="library.html" class="text-primary text-xs font-bold flex items-center gap-1 group hover:gap-2 transition-all">
+              View Skill Library
+              <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <div class="h-24 md:hidden"></div>
+  </div>
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden fixed bottom-0 w-full bg-[#111C2D] flex justify-around items-center px-4 h-16 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+  <a href="#" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">dashboard</span>
+    <span class="text-[10px]">Home</span>
+  </a>
+  <a href="index.html" class="flex flex-col items-center gap-1 text-[#ADC6FF]">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">psychology</span>
+    <span class="text-[10px]">Crawl</span>
+  </a>
+  <a href="library.html" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">auto_awesome</span>
+    <span class="text-[10px]">Library</span>
+  </a>
+  <a href="#" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">account_circle</span>
+    <span class="text-[10px]">Profile</span>
+  </a>
+</nav>
+
+<script>
+  const BACKEND = 'http://localhost:3000';
+  let crawling = false;
+
+  async function startCrawl() {
+    if (crawling) return;
+
+    // Check settings
+    const settings = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
+    if (!settings.anthropicKey) {
+      alert('Add your Anthropic API key in Settings first.');
+      window.location.href = 'settings.html';
+      return;
+    }
+
+    // Check if backend is running
+    try {
+      await fetch(`${BACKEND}/api/health`);
+    } catch {
+      showError('Backend server is not running. Open a terminal and run:\n\ncd "insta saved list ai crawler/server" && npm install && npm start');
+      return;
+    }
+
+    crawling = true;
+    setBusy(true);
+
+    const params = new URLSearchParams({
+      apiKey: settings.anthropicKey,
+      model: settings.model || 'claude-sonnet-4-6',
+      batchSize: settings.batchSize || 100,
+      includeReels: settings.includeReels !== false,
+      ...(settings.activeCategories ? { activeCategories: JSON.stringify(settings.activeCategories) } : {}),
+    });
+
+    const evtSource = new EventSource(`${BACKEND}/api/crawl?${params}`);
+
+    evtSource.addEventListener('status', (e) => {
+      const d = JSON.parse(e.data);
+      setProgress(d.progress || 0, d.message, d.total, d.classified);
+    });
+
+    evtSource.addEventListener('complete', (e) => {
+      const d = JSON.parse(e.data);
+      evtSource.close();
+      crawling = false;
+      setBusy(false);
+      showComplete(d);
+      // Save to localStorage for library page
+      localStorage.setItem('crawl_results', JSON.stringify(d));
+    });
+
+    evtSource.addEventListener('error', (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        showError(d.message);
+      } catch {
+        showError('Crawl failed. Check the server logs.');
+      }
+      evtSource.close();
+      crawling = false;
+      setBusy(false);
+    });
+  }
+
+  function setBusy(busy) {
+    const btn = document.getElementById('sync-btn');
+    const navBtn = document.querySelector('nav button[onclick="startCrawl()"]');
+    const badge = document.getElementById('status-badge');
+
+    [btn, navBtn].forEach(b => {
+      if (!b) return;
+      b.textContent = busy ? 'Crawling...' : 'Initialize Sync';
+      b.disabled = busy;
+      b.classList.toggle('opacity-60', busy);
+      b.classList.toggle('cursor-not-allowed', busy);
+    });
+
+    if (busy) {
+      badge.textContent = 'RUNNING';
+      badge.className = 'text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-mono';
+    }
+  }
+
+  function setProgress(pct, message, total, classified) {
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+    if (message) document.getElementById('status-msg').textContent = message;
+    if (total) document.getElementById('queue-count').textContent = `Queue: ${total} items`;
+    if (classified !== undefined) document.getElementById('ai-identified').textContent = classified;
+  }
+
+  function showComplete(d) {
+    document.getElementById('status-badge').textContent = 'COMPLETE';
+    document.getElementById('status-badge').className = 'text-xs bg-primary/10 text-primary px-2 py-0.5 rounded font-mono';
+    document.getElementById('status-msg').textContent = 'Crawl complete. Results saved to library.';
+    document.getElementById('total-crawled').textContent = (d.total || 0).toLocaleString();
+    document.getElementById('ai-identified').textContent = d.aiCount || 0;
+    document.getElementById('relevance-score').textContent = (d.relevance || 0) + '%';
+    document.getElementById('relevance-bar').style.width = (d.relevance || 0) + '%';
+    document.getElementById('relevance-bar-bg').style.width = (100 - (d.relevance || 0)) + '%';
+    document.getElementById('last-crawled').textContent = 'Just now';
+    document.getElementById('queue-count').textContent = 'Queue: 0 items';
+
+    // Top categories from results
+    const cats = {};
+    (d.skills || []).forEach(s => { cats[s.category] = (cats[s.category] || 0) + 1; });
+    const topCats = Object.entries(cats).sort((a,b) => b[1]-a[1]).slice(0, 4).map(([k]) => k);
+
+    document.getElementById('insights-content').innerHTML = `
+      <div class="flex gap-4">
+        <div class="flex-shrink-0 w-1 bg-primary/60 rounded-full"></div>
+        <p class="text-on-surface-variant leading-relaxed text-sm">
+          Detected <span class="text-on-surface font-semibold">${d.aiCount} AI-related posts</span> from ${(d.total||0).toLocaleString()} saves.
+          ${topCats.length ? `Top categories: ${topCats.map(c => `<span class="text-primary">${c}</span>`).join(', ')}.` : ''}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4">
+        ${topCats.map(c => `<span class="px-3 py-1 bg-secondary-container/30 text-on-secondary-container text-[10px] font-bold uppercase rounded-sm border border-outline-variant/20">${c}</span>`).join('')}
+      </div>
+    `;
+  }
+
+  function showError(msg) {
+    document.getElementById('status-badge').textContent = 'ERROR';
+    document.getElementById('status-badge').className = 'text-xs bg-error/20 text-error px-2 py-0.5 rounded font-mono';
+    document.getElementById('status-msg').textContent = msg;
+    document.getElementById('progress-bar').style.width = '0%';
+    document.getElementById('progress-pct').textContent = '0%';
+  }
+
+  // On load: try backend first, fall back to localStorage
+  async function init() {
+    try {
+      const res = await fetch(`${BACKEND}/api/results`);
+      const d = await res.json();
+      if (d) {
+        localStorage.setItem('crawl_results', JSON.stringify(d));
+        restoreFromData(d);
+        return;
+      }
+    } catch {}
+
+    // Fallback: localStorage
+    const saved = localStorage.getItem('crawl_results');
+    if (saved) {
+      try { restoreFromData(JSON.parse(saved)); } catch {}
+    }
+  }
+
+  function restoreFromData(r) {
+    const ts = new Date(r.timestamp);
+    const mins = Math.floor((Date.now() - ts) / 60000);
+    document.getElementById('last-crawled').textContent = mins < 1 ? 'Just now' : mins < 60 ? `${mins} mins ago` : `${Math.floor(mins/60)}h ago`;
+    document.getElementById('total-crawled').textContent = (r.total || 0).toLocaleString();
+    document.getElementById('ai-identified').textContent = r.aiCount || 0;
+    document.getElementById('relevance-score').textContent = (r.relevance || 0) + '%';
+    document.getElementById('relevance-bar').style.width = (r.relevance || 0) + '%';
+    document.getElementById('relevance-bar-bg').style.width = (100 - (r.relevance || 0)) + '%';
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-pct').textContent = '100%';
+    document.getElementById('status-badge').textContent = 'COMPLETE';
+    document.getElementById('status-msg').textContent = 'Previous crawl results loaded.';
+  }
+
+  init();
+</script>
+</body>
+</html>

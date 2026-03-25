@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "instamcp": {
+      "command": "node",
+      "args": ["/Users/cocoleung/Desktop/insta saved list ai crawler/mcp-server/index.js"]
+    }
+  }
+}

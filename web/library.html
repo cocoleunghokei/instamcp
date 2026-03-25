@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InstaMCP | Skill Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface": "#081425",
+          "surface-dim": "#081425",
+          "surface-container-highest": "#2a3548",
+          "secondary-container": "#3e495d",
+          "surface-bright": "#2f3a4c",
+          "tertiary-fixed-dim": "#ffb595",
+          "primary": "#adc6ff",
+          "primary-container": "#4b8eff",
+          "secondary-fixed": "#d8e3fb",
+          "primary-fixed": "#d8e2ff",
+          "surface-container-lowest": "#040e1f",
+          "on-surface": "#d8e3fb",
+          "tertiary": "#ffb595",
+          "on-background": "#d8e3fb",
+          "on-primary": "#002e69",
+          "background": "#081425",
+          "error": "#ffb4ab",
+          "on-surface-variant": "#c1c6d7",
+          "surface-tint": "#adc6ff",
+          "surface-container": "#152031",
+          "inverse-surface": "#d8e3fb",
+          "secondary": "#bcc7de",
+          "surface-container-high": "#1f2a3c",
+          "on-primary-container": "#00285c",
+          "on-secondary-container": "#aeb9d0",
+          "surface-container-low": "#111c2d",
+          "surface-variant": "#2a3548",
+          "on-secondary": "#263143",
+          "outline-variant": "#414755",
+          "primary-fixed-dim": "#adc6ff",
+          "outline": "#8b90a0"
+        },
+        fontFamily: {
+          "headline": ["Manrope"],
+          "body": ["Inter"],
+          "label": ["Inter"]
+        },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .glass-card {
+    background: rgba(42, 53, 72, 0.7);
+    backdrop-filter: blur(12px);
+  }
+  body { background-color: #081425; color: #d8e3fb; }
+
+  .skill-card { transition: transform 0.2s ease, background-color 0.2s ease; }
+  .skill-card:hover { transform: translateY(-2px); }
+
+  .install-btn.installed {
+    background: rgba(16,185,129,0.15);
+    color: #6ee7b7;
+  }
+
+  /* Copy toast */
+  #copy-toast {
+    transition: opacity 0.3s ease;
+  }
+</style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary/30">
+
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#111C2D] flex justify-between items-center px-8 h-16">
+  <div class="flex items-center gap-8">
+    <span class="text-xl font-black text-[#ADC6FF] tracking-tighter font-headline">InstaMCP</span>
+    <div class="hidden md:flex gap-6 items-center">
+      <a class="font-headline font-bold tracking-tight text-[#414755] hover:text-[#ADC6FF] transition-colors" href="index.html">Crawl</a>
+      <a class="font-headline font-bold tracking-tight text-[#ADC6FF] border-b-2 border-[#ADC6FF] pb-1" href="library.html">Library</a>
+      <a class="font-headline font-bold tracking-tight text-[#414755] hover:text-[#ADC6FF] transition-colors" href="settings.html">Settings</a>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <div class="relative hidden lg:block">
+      <input id="global-search" class="bg-surface-container border-none rounded-full px-4 py-1.5 text-sm w-64 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Search MCP skills..." type="text"/>
+      <span class="material-symbols-outlined absolute right-3 top-1.5 text-outline text-sm">search</span>
+    </div>
+    <button class="material-symbols-outlined text-on-surface-variant hover:text-primary p-2 rounded-full transition-colors">account_circle</button>
+  </div>
+</nav>
+
+<!-- Main Content Canvas -->
+<main class="pt-24 px-8 pb-12 min-h-screen">
+
+  <!-- Header -->
+  <header class="mb-10 max-w-6xl mx-auto">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <h1 class="text-5xl font-headline font-extrabold tracking-tight text-on-surface mb-2">Skill Library</h1>
+        <p class="text-on-surface-variant max-w-xl text-lg">Browse and activate MCP skills discovered through your Instagram saves.</p>
+      </div>
+      <div class="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
+        <button onclick="filterTab('all')" id="tab-all" class="tab-btn px-4 py-2 bg-surface-container-highest text-primary rounded-md text-sm font-medium">All Skills</button>
+        <button onclick="filterTab('installed')" id="tab-installed" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Installed</button>
+        <button onclick="filterTab('new')" id="tab-new" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">New</button>
+      </div>
+    </div>
+
+    <!-- Filter Row -->
+    <div class="mt-8 grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div class="md:col-span-8 relative">
+        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+        <input id="skill-search" oninput="renderSkills()" class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all outline-none" placeholder="Search by name, category, or capability..." type="text"/>
+      </div>
+      <div class="md:col-span-2">
+        <select id="category-filter" onchange="renderSkills()" class="w-full h-full bg-surface-container-low text-on-surface rounded-xl px-4 border-none outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+          <option value="">All Categories</option>
+          <option value="Automation">Automation</option>
+          <option value="Dev Tools">Dev Tools</option>
+          <option value="Database">Database</option>
+          <option value="Design">Design</option>
+          <option value="AI">AI</option>
+          <option value="System">System</option>
+          <option value="Search">Search</option>
+          <option value="Notes">Notes</option>
+          <option value="PM">PM</option>
+          <option value="Deploy">Deploy</option>
+          <option value="Comms">Comms</option>
+        </select>
+      </div>
+      <div class="md:col-span-2">
+        <select id="sort-filter" onchange="renderSkills()" class="w-full h-full bg-surface-container-low text-on-surface rounded-xl px-4 border-none outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+          <option value="latest">Latest</option>
+          <option value="name">Name A–Z</option>
+          <option value="category">Category</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Skill Grid -->
+  <div id="skill-grid" class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Empty state -->
+  <div id="empty-state" class="hidden max-w-6xl mx-auto mt-16 flex flex-col items-center gap-6 text-center">
+    <span class="material-symbols-outlined text-6xl text-outline">manage_search</span>
+    <div>
+      <p class="text-on-surface font-bold text-lg mb-2">No skills found</p>
+      <p class="text-on-surface-variant text-sm">Try adjusting your filters, or <a href="index.html" class="text-primary hover:underline">run a new crawl</a> to discover more.</p>
+    </div>
+  </div>
+
+  <!-- No crawl state -->
+  <div id="no-crawl-state" class="hidden max-w-6xl mx-auto mt-16 flex flex-col items-center gap-6 text-center">
+    <span class="material-symbols-outlined text-6xl text-outline">radar</span>
+    <div>
+      <p class="text-on-surface font-bold text-lg mb-2">No crawl data yet</p>
+      <p class="text-on-surface-variant text-sm mb-6">Run a crawl to discover MCP skills from your Instagram saved posts.</p>
+      <a href="index.html" class="px-8 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-full font-bold text-sm hover:scale-[1.02] transition-transform active:scale-95">
+        Go to Crawl Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Load More -->
+  <div id="load-more-section" class="hidden mt-16 flex justify-center">
+    <button onclick="loadMore()" class="group flex items-center gap-3 bg-surface-container-low hover:bg-surface-container-high px-8 py-4 rounded-xl transition-all">
+      <span class="text-sm font-bold text-on-surface">Load More Skills</span>
+      <span class="material-symbols-outlined group-hover:translate-y-1 transition-transform">expand_more</span>
+    </button>
+  </div>
+
+</main>
+
+<!-- Install Snippet Modal -->
+<div id="install-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
+  <div class="relative glass-card rounded-xl p-8 max-w-lg w-full shadow-2xl border border-outline-variant/20">
+    <button onclick="closeModal()" class="absolute top-4 right-4 text-outline hover:text-on-surface transition-colors">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+    <h3 class="text-xl font-headline font-bold mb-2" id="modal-title">Install Skill</h3>
+    <p class="text-on-surface-variant text-sm mb-6" id="modal-desc"></p>
+    <div class="bg-surface-container-lowest rounded-lg p-4 mb-6">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-[10px] uppercase tracking-widest text-outline font-bold">Claude Desktop Config</span>
+        <button onclick="copyConfig()" class="text-primary text-xs font-bold flex items-center gap-1 hover:gap-2 transition-all">
+          <span class="material-symbols-outlined text-sm">content_copy</span>
+          Copy
+        </button>
+      </div>
+      <pre id="modal-config" class="text-xs text-on-surface-variant font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed"></pre>
+    </div>
+    <button onclick="confirmInstall()" id="modal-install-btn" class="w-full py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-full font-bold text-sm hover:scale-[1.02] transition-transform active:scale-95">
+      Mark as Installed
+    </button>
+  </div>
+</div>
+
+<!-- Copy Toast -->
+<div id="copy-toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface-container-highest text-on-surface px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50 flex items-center gap-2">
+  <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
+  Copied to clipboard!
+</div>
+
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden fixed bottom-0 w-full bg-[#111C2D] flex justify-around items-center px-4 h-16 z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+  <a href="#" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">dashboard</span>
+    <span class="text-[10px]">Home</span>
+  </a>
+  <a href="index.html" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">psychology</span>
+    <span class="text-[10px]">Crawl</span>
+  </a>
+  <a href="library.html" class="flex flex-col items-center gap-1 text-[#ADC6FF]">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+    <span class="text-[10px]">Library</span>
+  </a>
+  <a href="#" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">account_circle</span>
+    <span class="text-[10px]">Profile</span>
+  </a>
+</nav>
+
+<script>
+  // Full skill catalog (fallback + crawl-discovered)
+  const DEFAULT_SKILLS = [
+    { id: 1, name: "Playwright MCP", category: "Automation", desc: "Control browsers with Claude using natural language. Navigate, click, extract — all via MCP.", icon: "web", tag: "Browser", featured: true, isNew: true },
+    { id: 2, name: "GitHub MCP", category: "Dev Tools", desc: "Manage repos, PRs, and issues directly from Claude. Full GitHub API via MCP protocol.", icon: "code", tag: "Tooling", isNew: false },
+    { id: 3, name: "Filesystem MCP", category: "System", desc: "Give Claude direct read/write access to your local filesystem with permission controls.", icon: "folder_open", tag: "System", isNew: false },
+    { id: 4, name: "Supabase MCP", category: "Database", desc: "Query and mutate your Supabase database using natural language through Claude.", icon: "database", tag: "Database", isNew: true },
+    { id: 5, name: "Figma MCP", category: "Design", desc: "Extract design tokens, components, and layout specs from Figma directly into Claude.", icon: "palette", tag: "Design", isNew: false },
+    { id: 6, name: "Slack MCP", category: "Comms", desc: "Read channels, send messages, and search Slack history via Claude.", icon: "chat", tag: "Comms", isNew: false },
+    { id: 7, name: "Brave Search MCP", category: "Search", desc: "Live web search powered by Brave, surfaced directly in your Claude conversations.", icon: "search", tag: "Search", isNew: true },
+    { id: 8, name: "Memory MCP", category: "AI", desc: "Persistent knowledge graph for Claude. Store and recall facts across sessions.", icon: "psychology", tag: "AI", isNew: false },
+    { id: 9, name: "Sequential Thinking MCP", category: "AI", desc: "Structured reasoning chains for complex multi-step problem solving in Claude.", icon: "account_tree", tag: "AI", featured: false, isNew: true },
+    { id: 10, name: "Obsidian MCP", category: "Notes", desc: "Query and edit your Obsidian vault through Claude. Semantic search included.", icon: "article", tag: "Notes", isNew: false },
+    { id: 11, name: "Linear MCP", category: "PM", desc: "Create and manage Linear issues, projects, and cycles from within Claude.", icon: "task_alt", tag: "PM", isNew: false },
+    { id: 12, name: "Vercel MCP", category: "Deploy", desc: "Deploy, inspect, and roll back Vercel projects using natural language commands.", icon: "cloud_upload", tag: "Deploy", isNew: true },
+  ];
+
+  const MCP_CONFIGS = {
+    "Playwright MCP": `"playwright": {\n  "command": "npx",\n  "args": ["@playwright/mcp@latest"]\n}`,
+    "GitHub MCP": `"github": {\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-github"],\n  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "<token>" }\n}`,
+    "Filesystem MCP": `"filesystem": {\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]\n}`,
+    "Supabase MCP": `"supabase": {\n  "command": "npx",\n  "args": ["-y", "@supabase/mcp-server-supabase@latest"],\n  "env": { "SUPABASE_URL": "<url>", "SUPABASE_KEY": "<key>" }\n}`,
+    "Figma MCP": `"figma": {\n  "command": "npx",\n  "args": ["-y", "figma-mcp"],\n  "env": { "FIGMA_TOKEN": "<token>" }\n}`,
+    "Slack MCP": `"slack": {\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-slack"],\n  "env": { "SLACK_BOT_TOKEN": "<token>" }\n}`,
+    "Brave Search MCP": `"brave-search": {\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-brave-search"],\n  "env": { "BRAVE_API_KEY": "<key>" }\n}`,
+    "Memory MCP": `"memory": {\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-memory"]\n}`,
+    "Sequential Thinking MCP": `"sequential-thinking": {\n  "command": "npx",\n  "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]\n}`,
+    "Obsidian MCP": `"obsidian": {\n  "command": "npx",\n  "args": ["-y", "mcp-obsidian"],\n  "env": { "OBSIDIAN_VAULT_PATH": "/path/to/vault" }\n}`,
+    "Linear MCP": `"linear": {\n  "command": "npx",\n  "args": ["-y", "@linear/mcp"],\n  "env": { "LINEAR_API_KEY": "<key>" }\n}`,
+    "Vercel MCP": `"vercel": {\n  "command": "npx",\n  "args": ["-y", "@vercel/mcp"],\n  "env": { "VERCEL_TOKEN": "<token>" }\n}`,
+  };
+
+  let skills = [];
+  let installed = JSON.parse(localStorage.getItem('installed_skills') || '[]');
+  let activeTab = 'all';
+  let visibleCount = 12;
+  let currentModalSkill = null;
+
+  function init() {
+    const saved = localStorage.getItem('crawl_results');
+    if (saved) {
+      try {
+        const r = JSON.parse(saved);
+        // Merge crawl results with default skills
+        const crawlNames = (r.skills || []).map(s => s.name);
+        skills = DEFAULT_SKILLS.map(s => ({
+          ...s,
+          fromCrawl: crawlNames.includes(s.name)
+        }));
+      } catch(e) {
+        skills = DEFAULT_SKILLS;
+      }
+    } else {
+      skills = DEFAULT_SKILLS;
+    }
+    renderSkills();
+  }
+
+  function filterTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('bg-surface-container-highest', 'text-primary');
+      b.classList.add('text-outline');
+    });
+    const active = document.getElementById('tab-' + tab);
+    active.classList.add('bg-surface-container-highest', 'text-primary');
+    active.classList.remove('text-outline');
+    renderSkills();
+  }
+
+  function renderSkills() {
+    const searchVal = (document.getElementById('skill-search')?.value || '').toLowerCase();
+    const globalSearch = (document.getElementById('global-search')?.value || '').toLowerCase();
+    const query = searchVal || globalSearch;
+    const categoryVal = document.getElementById('category-filter')?.value || '';
+    const sortVal = document.getElementById('sort-filter')?.value || 'latest';
+
+    let filtered = skills.filter(s => {
+      if (activeTab === 'installed' && !installed.includes(s.id)) return false;
+      if (activeTab === 'new' && !s.isNew) return false;
+      if (categoryVal && s.category !== categoryVal) return false;
+      if (query && !s.name.toLowerCase().includes(query) && !s.desc.toLowerCase().includes(query) && !s.category.toLowerCase().includes(query)) return false;
+      return true;
+    });
+
+    if (sortVal === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
+    else if (sortVal === 'category') filtered.sort((a, b) => a.category.localeCompare(b.category));
+
+    const grid = document.getElementById('skill-grid');
+    const emptyState = document.getElementById('empty-state');
+    const noCrawl = document.getElementById('no-crawl-state');
+    const loadMore = document.getElementById('load-more-section');
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '';
+      emptyState.classList.remove('hidden');
+      emptyState.classList.add('flex');
+      noCrawl.classList.add('hidden');
+      loadMore.classList.add('hidden');
+      return;
+    }
+
+    emptyState.classList.add('hidden');
+    emptyState.classList.remove('flex');
+    noCrawl.classList.add('hidden');
+    noCrawl.classList.remove('flex');
+
+    const shown = filtered.slice(0, visibleCount);
+    grid.innerHTML = shown.map((s, idx) => renderCard(s, idx)).join('');
+
+    if (filtered.length > visibleCount) {
+      loadMore.classList.remove('hidden');
+      loadMore.classList.add('flex');
+    } else {
+      loadMore.classList.add('hidden');
+      loadMore.classList.remove('flex');
+    }
+  }
+
+  function renderCard(skill, idx) {
+    const isInstalled = installed.includes(skill.id);
+    const isFeatured = skill.featured && idx === 0;
+
+    if (isFeatured) {
+      return `
+        <div class="lg:col-span-2 bg-surface-container-low rounded-xl p-8 relative overflow-hidden skill-card group hover:shadow-2xl hover:shadow-primary/10">
+          <div class="absolute top-0 right-0 p-4">
+            <span class="bg-secondary-container text-on-secondary-container text-[10px] font-bold px-2 py-1 rounded-sm tracking-wider uppercase">${skill.tag}</span>
+          </div>
+          <div class="flex items-start gap-6 relative z-10">
+            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center shadow-lg shadow-primary/20 shrink-0">
+              <span class="material-symbols-outlined text-on-primary-container text-3xl" style="font-variation-settings: 'FILL' 1;">${skill.icon}</span>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-2xl font-headline font-bold text-on-surface mb-2">${skill.name}</h3>
+              <p class="text-on-surface-variant mb-6 text-sm leading-relaxed">${skill.desc}</p>
+              <div class="flex items-center gap-4">
+                <button onclick="openInstallModal(${skill.id})" class="install-btn bg-gradient-to-r from-primary to-primary-container text-on-primary-container font-bold px-6 py-2.5 rounded-full text-xs active:scale-95 transition-transform ${isInstalled ? 'installed' : ''}">
+                  ${isInstalled ? '✓ Installed' : 'Install in Claude'}
+                </button>
+                <button onclick="openInstallModal(${skill.id})" class="text-outline hover:text-primary text-xs font-bold transition-colors">View Config</button>
+              </div>
+            </div>
+          </div>
+          <div class="absolute -bottom-12 -right-12 opacity-5 group-hover:opacity-10 transition-opacity">
+            <span class="material-symbols-outlined text-[160px]">${skill.icon}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="bg-surface-container-low rounded-xl p-6 flex flex-col skill-card hover:bg-surface-container-high">
+        <div class="flex justify-between items-start mb-4">
+          <div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
+            <span class="material-symbols-outlined text-primary">${skill.icon}</span>
+          </div>
+          <span class="text-[10px] text-outline font-bold tracking-widest uppercase">${skill.category}</span>
+        </div>
+        <h4 class="text-lg font-bold text-on-surface mb-2">${skill.name}</h4>
+        <p class="text-on-surface-variant text-sm mb-6 flex-1">${skill.desc}</p>
+        <button onclick="openInstallModal(${skill.id})" class="install-btn w-full bg-surface-container-highest text-on-surface font-bold py-2.5 rounded-full text-xs hover:bg-primary/20 transition-colors ${isInstalled ? 'installed' : ''}">
+          ${isInstalled ? '✓ Installed' : 'Install'}
+        </button>
+      </div>
+    `;
+  }
+
+  function loadMore() {
+    visibleCount += 6;
+    renderSkills();
+  }
+
+  function openInstallModal(skillId) {
+    const skill = skills.find(s => s.id === skillId);
+    if (!skill) return;
+    currentModalSkill = skill;
+
+    document.getElementById('modal-title').textContent = skill.name;
+    document.getElementById('modal-desc').textContent = skill.desc;
+    document.getElementById('modal-config').textContent = MCP_CONFIGS[skill.name] || `"${skill.name.toLowerCase().replace(/\s/g, '-')}": {\n  "command": "npx",\n  "args": ["${skill.name.toLowerCase().replace(/\s/g, '-')}"]\n}`;
+
+    const isInstalled = installed.includes(skillId);
+    const btn = document.getElementById('modal-install-btn');
+    btn.textContent = isInstalled ? 'Unmark as Installed' : 'Mark as Installed';
+
+    document.getElementById('install-modal').classList.remove('hidden');
+    document.getElementById('install-modal').classList.add('flex');
+  }
+
+  function closeModal() {
+    document.getElementById('install-modal').classList.add('hidden');
+    document.getElementById('install-modal').classList.remove('flex');
+    currentModalSkill = null;
+  }
+
+  function confirmInstall() {
+    if (!currentModalSkill) return;
+    const id = currentModalSkill.id;
+    if (installed.includes(id)) {
+      installed = installed.filter(i => i !== id);
+    } else {
+      installed.push(id);
+    }
+    localStorage.setItem('installed_skills', JSON.stringify(installed));
+    closeModal();
+    renderSkills();
+  }
+
+  function copyConfig() {
+    const text = document.getElementById('modal-config').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('copy-toast');
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.classList.remove('flex');
+      }, 2000);
+    });
+  }
+
+  // Wire global nav search
+  document.getElementById('global-search')?.addEventListener('input', renderSkills);
+
+  init();
+</script>
+</body>
+</html>

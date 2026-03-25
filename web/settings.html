@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InstaMCP | Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "surface": "#081425", "surface-container-highest": "#2a3548",
+          "secondary-container": "#3e495d", "primary": "#adc6ff",
+          "primary-container": "#4b8eff", "surface-container-lowest": "#040e1f",
+          "on-surface": "#d8e3fb", "tertiary": "#ffb595",
+          "on-surface-variant": "#c1c6d7", "surface-container": "#152031",
+          "surface-container-high": "#1f2a3c", "on-primary-container": "#00285c",
+          "on-secondary-container": "#aeb9d0", "surface-container-low": "#111c2d",
+          "outline-variant": "#414755", "outline": "#8b90a0", "error": "#ffb4ab",
+        },
+        fontFamily: { "headline": ["Manrope"], "body": ["Inter"] },
+        borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+      },
+    },
+  }
+</script>
+<style>
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  body { background-color: #081425; color: #d8e3fb; }
+  input:focus { outline: none; }
+</style>
+</head>
+<body class="font-body selection:bg-primary/30">
+
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#111C2D] flex justify-between items-center px-8 h-16">
+  <div class="flex items-center gap-8">
+    <span class="text-xl font-black text-[#ADC6FF] tracking-tighter font-headline">InstaMCP</span>
+    <div class="hidden md:flex gap-6 items-center">
+      <a class="font-headline font-bold tracking-tight text-[#414755] hover:text-[#ADC6FF] transition-colors" href="index.html">Crawl</a>
+      <a class="font-headline font-bold tracking-tight text-[#414755] hover:text-[#ADC6FF] transition-colors" href="library.html">Library</a>
+      <a class="font-headline font-bold tracking-tight text-[#ADC6FF] border-b-2 border-[#ADC6FF] pb-1" href="settings.html">Settings</a>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <button class="p-2 text-[#414755] hover:text-[#ADC6FF] transition-colors rounded-full">
+      <span class="material-symbols-outlined">account_circle</span>
+    </button>
+  </div>
+</nav>
+
+<main class="pt-24 px-8 pb-12 min-h-screen">
+  <div class="max-w-2xl mx-auto">
+
+    <header class="mb-10">
+      <h1 class="text-4xl font-black font-headline tracking-tighter text-on-surface mb-2">Settings</h1>
+      <p class="text-on-surface-variant">Configure your Instagram access and AI credentials.</p>
+    </header>
+
+    <!-- Status Banner -->
+    <div id="status-banner" class="hidden mb-8 px-5 py-4 rounded-xl flex items-center gap-3 text-sm font-medium"></div>
+
+    <!-- Instagram Section -->
+    <section class="bg-surface-container-low rounded-xl p-8 mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">photo_camera</span>
+        </div>
+        <div>
+          <h2 class="font-headline font-bold text-on-surface">Instagram</h2>
+          <p class="text-xs text-outline">Session-based access to your saved posts</p>
+        </div>
+        <div id="ig-status" class="ml-auto flex items-center gap-2 text-xs text-outline">
+          <div class="w-2 h-2 rounded-full bg-outline"></div>
+          Not connected
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Username</label>
+          <input id="ig-username" type="text" placeholder="your_instagram_username"
+            class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-outline border border-transparent focus:border-primary/40 transition-colors"/>
+        </div>
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Password</label>
+          <div class="relative">
+            <input id="ig-password" type="password" placeholder="••••••••••••"
+              class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-outline border border-transparent focus:border-primary/40 transition-colors pr-12"/>
+            <button onclick="toggleVisibility('ig-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-outline mt-2">Stored locally only. Never sent anywhere except Instagram's login endpoint.</p>
+        </div>
+        <div class="pt-2">
+          <button onclick="testInstagram()" id="ig-test-btn" class="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold hover:bg-primary/20 transition-colors">
+            Test Connection
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Anthropic Section -->
+    <section class="bg-surface-container-low rounded-xl p-8 mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">psychology</span>
+        </div>
+        <div>
+          <h2 class="font-headline font-bold text-on-surface">Anthropic API</h2>
+          <p class="text-xs text-outline">Used to classify posts and identify AI/MCP tools</p>
+        </div>
+        <div id="ai-status" class="ml-auto flex items-center gap-2 text-xs text-outline">
+          <div class="w-2 h-2 rounded-full bg-outline"></div>
+          Not verified
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">API Key</label>
+          <div class="relative">
+            <input id="anthropic-key" type="password" placeholder="sk-ant-••••••••••••••••••••••••••••••••"
+              class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-outline border border-transparent focus:border-primary/40 transition-colors pr-12 font-mono"/>
+            <button onclick="toggleVisibility('anthropic-key')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Model</label>
+          <select id="ai-model" class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent focus:border-primary/40 transition-colors outline-none cursor-pointer">
+            <option value="claude-sonnet-4-6">claude-sonnet-4-6 (recommended)</option>
+            <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (faster, cheaper)</option>
+            <option value="claude-opus-4-6">claude-opus-4-6 (most capable)</option>
+          </select>
+        </div>
+        <div class="pt-2">
+          <button onclick="testAnthropic()" id="ai-test-btn" class="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold hover:bg-primary/20 transition-colors">
+            Verify Key
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Crawl Preferences -->
+    <section class="bg-surface-container-low rounded-xl p-8 mb-8">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary">tune</span>
+        </div>
+        <div>
+          <h2 class="font-headline font-bold text-on-surface">Crawl Preferences</h2>
+          <p class="text-xs text-outline">Control how posts are fetched and classified</p>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Posts per crawl</label>
+          <select id="batch-size" class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent outline-none cursor-pointer">
+            <option value="50">50 posts</option>
+            <option value="100" selected>100 posts</option>
+            <option value="200">200 posts</option>
+            <option value="500">500 posts (slow)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-3">Filter categories</label>
+          <div class="flex flex-wrap gap-2" id="category-chips">
+            <!-- populated by JS -->
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between py-3 border-t border-outline-variant/20">
+          <div>
+            <p class="text-sm font-medium text-on-surface">Auto-crawl on startup</p>
+            <p class="text-xs text-outline">Fetch new saves when the app loads</p>
+          </div>
+          <button onclick="toggleSwitch('auto-crawl')" id="auto-crawl" data-on="false"
+            class="w-12 h-6 rounded-full bg-surface-container-highest relative transition-colors cursor-pointer">
+            <div class="w-5 h-5 rounded-full bg-outline absolute top-0.5 left-0.5 transition-all"></div>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between py-3 border-t border-outline-variant/20">
+          <div>
+            <p class="text-sm font-medium text-on-surface">Include Reels</p>
+            <p class="text-xs text-outline">Classify saved Reels in addition to posts</p>
+          </div>
+          <button onclick="toggleSwitch('include-reels')" id="include-reels" data-on="true"
+            class="w-12 h-6 rounded-full bg-primary/40 relative transition-colors cursor-pointer">
+            <div class="w-5 h-5 rounded-full bg-primary absolute top-0.5 left-6 transition-all"></div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Save Button -->
+    <div class="flex items-center gap-4">
+      <button onclick="saveSettings()" class="px-8 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-full font-bold text-sm hover:scale-[1.02] transition-transform active:scale-95 shadow-lg shadow-primary/20">
+        Save Settings
+      </button>
+      <button onclick="clearAll()" class="px-6 py-3 text-outline hover:text-error text-sm font-medium transition-colors">
+        Clear all data
+      </button>
+    </div>
+
+  </div>
+</main>
+
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden fixed bottom-0 w-full bg-[#111C2D] flex justify-around items-center px-4 h-16 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+  <a href="index.html" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">psychology</span>
+    <span class="text-[10px]">Crawl</span>
+  </a>
+  <a href="library.html" class="flex flex-col items-center gap-1 text-[#414755]">
+    <span class="material-symbols-outlined">auto_awesome</span>
+    <span class="text-[10px]">Library</span>
+  </a>
+  <a href="settings.html" class="flex flex-col items-center gap-1 text-[#ADC6FF]">
+    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+    <span class="text-[10px]">Settings</span>
+  </a>
+</nav>
+
+<script>
+  const CATEGORIES = ["MCP Servers", "Claude Tools", "AI Frameworks", "LLM Tooling", "Dev Tools", "Automation", "Agents", "Prompting"];
+  let activeCategories = new Set(CATEGORIES);
+
+  function init() {
+    // Render category chips
+    const container = document.getElementById('category-chips');
+    CATEGORIES.forEach(cat => {
+      const chip = document.createElement('button');
+      chip.onclick = () => toggleCategory(cat, chip);
+      chip.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors bg-secondary-container/60 text-on-secondary-container';
+      chip.textContent = cat;
+      chip.dataset.cat = cat;
+      container.appendChild(chip);
+    });
+
+    // Load saved settings
+    const s = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
+    if (s.igUsername) document.getElementById('ig-username').value = s.igUsername;
+    if (s.igPassword) document.getElementById('ig-password').value = s.igPassword;
+    if (s.anthropicKey) document.getElementById('anthropic-key').value = s.anthropicKey;
+    if (s.model) document.getElementById('ai-model').value = s.model;
+    if (s.batchSize) document.getElementById('batch-size').value = s.batchSize;
+    if (s.activeCategories) {
+      activeCategories = new Set(s.activeCategories);
+      document.querySelectorAll('[data-cat]').forEach(chip => {
+        if (!activeCategories.has(chip.dataset.cat)) {
+          chip.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors bg-surface-container-highest text-outline';
+        }
+      });
+    }
+    if (s.autoCrawl) setSwitch('auto-crawl', s.autoCrawl);
+    if (s.includeReels !== undefined) setSwitch('include-reels', s.includeReels);
+
+    // Show connection status if previously verified
+    if (s.igVerified) setStatus('ig-status', true, 'Connected');
+    if (s.aiVerified) setStatus('ai-status', true, 'Verified');
+  }
+
+  function toggleCategory(cat, btn) {
+    if (activeCategories.has(cat)) {
+      activeCategories.delete(cat);
+      btn.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors bg-surface-container-highest text-outline';
+    } else {
+      activeCategories.add(cat);
+      btn.className = 'px-3 py-1.5 rounded-sm text-xs font-bold uppercase tracking-wider transition-colors bg-secondary-container/60 text-on-secondary-container';
+    }
+  }
+
+  function toggleVisibility(id) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  function toggleSwitch(id) {
+    const btn = document.getElementById(id);
+    const isOn = btn.dataset.on === 'true';
+    setSwitch(id, !isOn);
+  }
+
+  function setSwitch(id, on) {
+    const btn = document.getElementById(id);
+    const knob = btn.querySelector('div');
+    btn.dataset.on = on;
+    if (on) {
+      btn.className = 'w-12 h-6 rounded-full bg-primary/40 relative transition-colors cursor-pointer';
+      knob.className = 'w-5 h-5 rounded-full bg-primary absolute top-0.5 left-6 transition-all';
+    } else {
+      btn.className = 'w-12 h-6 rounded-full bg-surface-container-highest relative transition-colors cursor-pointer';
+      knob.className = 'w-5 h-5 rounded-full bg-outline absolute top-0.5 left-0.5 transition-all';
+    }
+  }
+
+  function setStatus(id, ok, label) {
+    const el = document.getElementById(id);
+    const dot = el.querySelector('div');
+    el.lastChild.textContent = ' ' + label;
+    if (ok) {
+      dot.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]';
+      el.className = 'ml-auto flex items-center gap-2 text-xs text-emerald-400';
+    } else {
+      dot.className = 'w-2 h-2 rounded-full bg-error';
+      el.className = 'ml-auto flex items-center gap-2 text-xs text-error';
+    }
+  }
+
+  function showBanner(msg, ok) {
+    const el = document.getElementById('status-banner');
+    el.className = `mb-8 px-5 py-4 rounded-xl flex items-center gap-3 text-sm font-medium ${ok ? 'bg-emerald-500/10 text-emerald-400' : 'bg-error/10 text-error'}`;
+    el.innerHTML = `<span class="material-symbols-outlined text-sm">${ok ? 'check_circle' : 'error'}</span>${msg}`;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+  }
+
+  async function testInstagram() {
+    const btn = document.getElementById('ig-test-btn');
+    const user = document.getElementById('ig-username').value;
+    const pass = document.getElementById('ig-password').value;
+    if (!user || !pass) { showBanner('Enter username and password first.', false); return; }
+
+    btn.textContent = 'Testing...';
+    btn.disabled = true;
+
+    // Call backend test endpoint
+    try {
+      const res = await fetch('http://localhost:3000/api/test-instagram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus('ig-status', true, 'Connected');
+        showBanner('Instagram connected successfully.', true);
+        const s = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
+        localStorage.setItem('instamcp_settings', JSON.stringify({ ...s, igVerified: true }));
+      } else {
+        setStatus('ig-status', false, 'Failed');
+        showBanner(data.error || 'Instagram login failed.', false);
+      }
+    } catch {
+      setStatus('ig-status', false, 'Server offline');
+      showBanner('Backend server not running. Start it with: cd server && npm start', false);
+    }
+    btn.textContent = 'Test Connection';
+    btn.disabled = false;
+  }
+
+  async function testAnthropic() {
+    const btn = document.getElementById('ai-test-btn');
+    const key = document.getElementById('anthropic-key').value;
+    if (!key) { showBanner('Enter your Anthropic API key first.', false); return; }
+
+    btn.textContent = 'Verifying...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('http://localhost:3000/api/test-anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: key })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus('ai-status', true, 'Verified');
+        showBanner('Anthropic API key is valid.', true);
+        const s = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
+        localStorage.setItem('instamcp_settings', JSON.stringify({ ...s, aiVerified: true }));
+      } else {
+        setStatus('ai-status', false, 'Invalid key');
+        showBanner(data.error || 'API key verification failed.', false);
+      }
+    } catch {
+      setStatus('ai-status', false, 'Server offline');
+      showBanner('Backend server not running. Start it with: cd server && npm start', false);
+    }
+    btn.textContent = 'Verify Key';
+    btn.disabled = false;
+  }
+
+  function saveSettings() {
+    const settings = {
+      igUsername: document.getElementById('ig-username').value,
+      igPassword: document.getElementById('ig-password').value,
+      anthropicKey: document.getElementById('anthropic-key').value,
+      model: document.getElementById('ai-model').value,
+      batchSize: document.getElementById('batch-size').value,
+      activeCategories: [...activeCategories],
+      autoCrawl: document.getElementById('auto-crawl').dataset.on === 'true',
+      includeReels: document.getElementById('include-reels').dataset.on === 'true',
+    };
+    localStorage.setItem('instamcp_settings', JSON.stringify(settings));
+    showBanner('Settings saved.', true);
+  }
+
+  function clearAll() {
+    if (!confirm('Clear all saved data including crawl results and installed skills?')) return;
+    localStorage.clear();
+    showBanner('All data cleared.', true);
+    setTimeout(() => location.reload(), 1000);
+  }
+
+  init();
+</script>
+</body>
+</html>
