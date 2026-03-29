@@ -112,6 +112,7 @@
       </div>
       <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg flex-wrap">
         <button onclick="filterTab('all')" id="tab-all" class="tab-btn px-4 py-2 bg-surface-container-highest text-primary rounded-md text-sm font-medium">All</button>
+        <button onclick="filterTab('MCP')" id="tab-MCP" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">MCP</button>
         <button onclick="filterTab('Skills')" id="tab-Skills" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Skills</button>
         <button onclick="filterTab('Agents')" id="tab-Agents" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Agents</button>
         <button onclick="filterTab('Tips')" id="tab-Tips" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Tips</button>
@@ -345,9 +346,9 @@
     active.classList.add('bg-surface-container-highest', 'text-primary');
     active.classList.remove('text-outline');
 
-    // Show installed filter only on Skills and Agents tabs
+    // Show installed filter only on relevant tabs
     const filterRow = document.getElementById('installed-filter-row');
-    if (tab === 'Skills' || tab === 'Agents') {
+    if (tab === 'Skills' || tab === 'Agents' || tab === 'MCP') {
       filterRow.classList.remove('hidden');
     } else {
       filterRow.classList.add('hidden');
@@ -382,7 +383,9 @@
     const TYPE_TABS = ['Skills', 'Agents', 'Tips', 'News'];
 
     let filtered = skills.filter(s => {
-      if (TYPE_TABS.includes(activeTab) && s.type !== activeTab) return false;
+      if (activeTab === 'MCP') {
+        if (!(s.category || '').toLowerCase().includes('mcp')) return false;
+      } else if (TYPE_TABS.includes(activeTab) && s.type !== activeTab) return false;
       if (installedOnly && !installed.includes(s.id)) return false;
       if (categoryVal && s.category !== categoryVal) return false;
       if (query && !s.name.toLowerCase().includes(query) && !(s.desc||'').toLowerCase().includes(query) && !(s.category||'').toLowerCase().includes(query)) return false;

@@ -115,7 +115,8 @@ For each post below, determine:
 2. If yes: which category fits best, what is the tool/skill name, your confidence (0-1), and the content type.
 
 Content type rules:
-- "Skills"  = MCP servers, tools, Claude integrations, installable dev tools
+- "MCP"     = MCP servers specifically (Model Context Protocol tools for Claude)
+- "Skills"  = other installable tools, Claude integrations, dev tools powered by AI
 - "Agents"  = AI agents, autonomous systems, multi-agent frameworks (CrewAI, AutoGen, etc.)
 - "Tips"    = prompting techniques, tutorials, workflows, how-to guides
 - "News"    = AI announcements, research papers, product releases, industry news
@@ -186,10 +187,10 @@ async function classifyBatchOllama(posts, model, activeCategories) {
 
   const prompt = `You are classifying Instagram saved posts to find ones related to AI tools, skills, and MCP servers.
 Categories: ${activeCategories.join(', ')}.
-Type: "Skills" (tools/MCPs to install), "Agents" (AI agents/frameworks), "Tips" (prompting/tutorials), "News" (announcements/research).
+Type: "MCP" (MCP servers for Claude), "Skills" (other AI tools), "Agents" (AI agents/frameworks), "Tips" (prompting/tutorials), "News" (announcements/research).
 
 For each post determine if it's AI-related. Respond ONLY with a JSON array, no explanation:
-[{"index":0,"isAiRelated":true,"category":"MCP Servers","type":"Skills","skillName":"Playwright MCP","confidence":0.95,"reason":"..."}]
+[{"index":0,"isAiRelated":true,"category":"MCP Servers","type":"MCP","skillName":"Playwright MCP","confidence":0.95,"reason":"..."}]
 
 Posts:
 ${JSON.stringify(postsJson)}`;
@@ -226,10 +227,10 @@ async function classifyBatchOpenAICompat(posts, model, baseUrl, apiKey, extraHea
 
   const prompt = `You are classifying Instagram saved posts to find ones related to AI tools, skills, and MCP servers.
 Categories: ${activeCategories.join(', ')}.
-Type: "Skills" (tools/MCPs to install), "Agents" (AI agents/frameworks), "Tips" (prompting/tutorials), "News" (announcements/research).
+Type: "MCP" (MCP servers for Claude), "Skills" (other AI tools), "Agents" (AI agents/frameworks), "Tips" (prompting/tutorials), "News" (announcements/research).
 
 For each post determine if it's AI-related. Respond ONLY with a JSON array, no explanation:
-[{"index":0,"isAiRelated":true,"category":"MCP Servers","type":"Skills","skillName":"Playwright MCP","confidence":0.95,"reason":"..."}]
+[{"index":0,"isAiRelated":true,"category":"MCP Servers","type":"MCP","skillName":"Playwright MCP","confidence":0.95,"reason":"..."}]
 
 Posts:
 ${JSON.stringify(postsJson)}`;
