@@ -155,10 +155,19 @@
           <div class="flex flex-wrap items-center gap-6">
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] uppercase tracking-wider text-outline font-bold">Date Range</label>
-              <div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-lg border border-outline-variant/20 cursor-pointer hover:border-primary/40 transition-colors">
-                <span class="material-symbols-outlined text-sm text-primary">calendar_today</span>
-                <span class="text-sm" id="date-range">Last 30 days</span>
-                <span class="material-symbols-outlined text-sm text-outline">expand_more</span>
+              <div class="flex items-center gap-2">
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-[9px] text-outline">From</label>
+                  <input id="crawl-date-start" type="date" min="2026-01-01"
+                    onchange="onCrawlDateChange()"
+                    class="bg-surface-container-lowest px-3 py-2 rounded-lg border border-outline-variant/20 text-sm text-on-surface focus:border-primary/40 outline-none cursor-pointer"/>
+                </div>
+                <span class="text-outline text-sm mt-4">→</span>
+                <div class="flex flex-col gap-0.5">
+                  <label class="text-[9px] text-outline">To (max 90 days)</label>
+                  <input id="crawl-date-end" type="date" readonly
+                    class="bg-surface-container-lowest px-3 py-2 rounded-lg border border-outline-variant/20 text-sm text-outline outline-none cursor-not-allowed"/>
+                </div>
               </div>
             </div>
             <button onclick="startCrawl()" id="sync-btn" class="mt-4 md:mt-0 px-8 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] transition-transform active:scale-95">
@@ -293,6 +302,15 @@
   const BACKEND = window.location.origin;
   let crawling = false;
 
+  function onCrawlDateChange() {
+    const start = document.getElementById('crawl-date-start').value;
+    if (!start) { document.getElementById('crawl-date-end').value = ''; return; }
+    const end = new Date(start);
+    end.setDate(end.getDate() + 90);
+    const today = new Date();
+    document.getElementById('crawl-date-end').value = (end > today ? today : end).toISOString().slice(0, 10);
+  }
+
   async function startCrawl() {
     if (crawling) return;
 
@@ -328,8 +346,8 @@
       batchSize: settings.batchSize || 100,
       includeReels: settings.includeReels !== false,
       maxResults: settings.maxResults || 500,
-      ...(settings.dateStart ? { dateStart: settings.dateStart } : {}),
-      ...(settings.dateEnd ? { dateEnd: settings.dateEnd } : {}),
+      ...(document.getElementById('crawl-date-start').value ? { dateStart: document.getElementById('crawl-date-start').value } : {}),
+      ...(document.getElementById('crawl-date-end').value ? { dateEnd: document.getElementById('crawl-date-end').value } : {}),
       ...(settings.activeCategories ? { activeCategories: JSON.stringify(settings.activeCategories) } : {}),
     });
 
