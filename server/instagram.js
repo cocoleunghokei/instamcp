@@ -1,8 +1,13 @@
 import { chromium } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const SESSION_FILE = path.resolve('./session.json');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DATA_DIR = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, 'data')
+  : path.resolve('.');
+const SESSION_FILE = path.join(DATA_DIR, 'session.json');
 
 /**
  * Launch a browser and log in to Instagram, saving the session cookie.
@@ -16,21 +21,58 @@ export async function loginInstagram(username, password) {
   const page = await context.newPage();
 
   try {
-    await page.goto('https://www.instagram.com/accounts/login/', { waitUntil: 'networkidle' });
-    await page.waitForSelector('input[name="username"]', { timeout: 10000 });
+    // domcontentloaded is faster and more reliable than networkidle on Instagram
+    await page.goto('https://www.instagram.com/accounts/login/', { waitUntil: 'domcontentloaded' });
 
-    await page.fill('input[name="username"]', username);
-    await page.fill('input[name="password"]', password);
-    await page.click('button[type="submit"]');
+    // Dismiss cookie consent dialog if present (common in EU / first visit)
+    try {
+      const cookieBtn = page.getByRole('button', { name: /allow all cookies|accept all|only allow essential/i });
+      await cookieBtn.waitFor({ timeout: 4000 });
+      await cookieBtn.click();
+    } catch { /* no dialog */ }
 
-    // Wait for either home page or error
-    await page.waitForURL(url => !url.includes('/accounts/login'), { timeout: 15000 });
+    // Instagram uses name="email" and name="pass" (not "username"/"password")
+    await page.waitForSelector('input[name="email"]', { timeout: 15000 });
 
-    // Check for login error
-    const errorEl = await page.$('p[data-testid="login-error-message"]');
+    await page.fill('input[name="email"]', username);
+    await page.fill('input[name="pass"]', password);
+    // Instagram hides the real submit input and uses a styled div[role=button]
+    await page.getByRole('button', { name: 'Log In', exact: true }).click();
+
+    // Wait for navigation away from login page
+    await page.waitForURL(url => !url.toString().includes('/accounts/login'), { timeout: 20000 });
+
+    const currentUrl = page.url();
+
+    // Instagram sometimes redirects to a security challenge instead of home
+    if (currentUrl.includes('/challenge')) {
+      throw new Error('Instagram requires identity verification (suspicious login). Complete the challenge manually at instagram.com first, then try again.');
+    }
+    if (currentUrl.includes('/two_factor')) {
+      throw new Error('Two-factor authentication is enabled. Disable 2FA on your account or complete it at instagram.com first.');
+    }
+
+    // Check for inline login error (wrong password, etc.)
+    // Instagram renders the error inside a div with a warning icon — match by color class or any visible error text
+    const errorEl = await page.$(
+      'p[data-testid="login-error-message"], #slfErrorAlert, [role="alert"], div[id*="error"], span[style*="color: rgb(237"]'
+    );
     if (errorEl) {
       const msg = await errorEl.textContent();
-      throw new Error(msg || 'Login failed');
+      throw new Error(msg?.trim() || 'Login failed — check your credentials.');
+    }
+    // Fallback: if we're still on the login page after submit, credentials were rejected
+    if (page.url().includes('/accounts/login')) {
+      throw new Error('Login failed — incorrect username or password.');
+    }
+
+    // Dismiss "Save login info" and notification dialogs that block navigation
+    for (const label of ['Not Now', 'Not now', 'Skip']) {
+      try {
+        const btn = page.getByRole('button', { name: label });
+        await btn.waitFor({ timeout: 3000 });
+        await btn.click();
+      } catch { /* no dialog */ }
     }
 
     // Save cookies
@@ -67,9 +109,6 @@ export async function fetchSavedPosts({ limit = 100, includeReels = true } = {})
   const posts = [];
 
   try {
-    // Instagram's saved posts page
-    await page.goto('https://www.instagram.com/saved/', { waitUntil: 'networkidle' });
-
     // Intercept the GraphQL API calls Instagram makes for saved posts
     const savedPostsData = [];
 
@@ -83,6 +122,9 @@ export async function fetchSavedPosts({ limit = 100, includeReels = true } = {})
         } catch {}
       }
     });
+
+    // Instagram's saved posts page
+    await page.goto('https://www.instagram.com/saved/', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
     // Scroll to trigger pagination
     let scrollCount = 0;

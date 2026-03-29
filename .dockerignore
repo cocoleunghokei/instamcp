@@ -1,0 +1,6 @@
+node_modules
+session.json
+results.json
+data/
+.env
+*.png

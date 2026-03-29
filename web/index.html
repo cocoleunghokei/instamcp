@@ -298,8 +298,13 @@
 
     // Check settings
     const settings = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
-    if (!settings.anthropicKey) {
-      alert('Add your Anthropic API key in Settings first.');
+    const ollamaModels = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
+    const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+    const isOllama = ollamaModels.some(m => settings.model?.startsWith(m));
+    const isGroq = groqModels.includes(settings.model);
+    const isOpenRouter = settings.model?.includes('/');
+    if (!settings.anthropicKey && !isOllama && !(isGroq && settings.groqKey) && !(isOpenRouter && settings.openRouterKey)) {
+      alert('Add an OpenRouter or Groq API key in Settings (both free), or select an Ollama model to run locally.');
       window.location.href = 'settings.html';
       return;
     }
@@ -316,10 +321,13 @@
     setBusy(true);
 
     const params = new URLSearchParams({
-      apiKey: settings.anthropicKey,
-      model: settings.model || 'claude-sonnet-4-6',
+      apiKey: settings.anthropicKey || '',
+      groqKey: settings.groqKey || '',
+      openRouterKey: settings.openRouterKey || '',
+      model: settings.model || 'meta-llama/llama-3.3-70b-instruct:free',
       batchSize: settings.batchSize || 100,
       includeReels: settings.includeReels !== false,
+      maxResults: settings.maxResults || 500,
       ...(settings.activeCategories ? { activeCategories: JSON.stringify(settings.activeCategories) } : {}),
     });
 
@@ -341,12 +349,17 @@
     });
 
     evtSource.addEventListener('error', (e) => {
+      let msg = 'Crawl failed — no details from server.';
       try {
         const d = JSON.parse(e.data);
-        showError(d.message);
+        msg = d.message || msg;
       } catch {
-        showError('Crawl failed. Check the server logs.');
+        // e.data is undefined when EventSource itself fails (connection refused, etc.)
+        if (e.target?.readyState === EventSource.CLOSED) {
+          msg = 'Connection to server closed unexpectedly. Is the backend still running?';
+        }
       }
+      showError(msg);
       evtSource.close();
       crawling = false;
       setBusy(false);
@@ -414,9 +427,16 @@
   function showError(msg) {
     document.getElementById('status-badge').textContent = 'ERROR';
     document.getElementById('status-badge').className = 'text-xs bg-error/20 text-error px-2 py-0.5 rounded font-mono';
-    document.getElementById('status-msg').textContent = msg;
     document.getElementById('progress-bar').style.width = '0%';
     document.getElementById('progress-pct').textContent = '0%';
+
+    const el = document.getElementById('status-msg');
+    el.innerHTML = `
+      <span class="block text-error/90 mb-1">${msg}</span>
+      <button onclick="navigator.clipboard.writeText(${JSON.stringify(msg)}).then(()=>{this.textContent='Copied!';setTimeout(()=>{this.textContent='Copy error'},1500)})"
+        class="mt-1 text-[10px] px-2 py-0.5 rounded border border-outline-variant/30 text-outline hover:text-on-surface hover:border-outline transition-colors">
+        Copy error
+      </button>`;
   }
 
   // On load: try backend first, fall back to localStorage

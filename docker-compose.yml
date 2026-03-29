@@ -1,0 +1,14 @@
+services:
+  instamcp:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      # Persist session + results outside the container
+      - ./data:/app/server/data
+    environment:
+      - NODE_ENV=production
+      # Set a password to protect the web UI when exposed to the internet.
+      # Leave unset (or remove this line) for local-only use.
+      - APP_PASSWORD=${APP_PASSWORD:-}
+    restart: unless-stopped

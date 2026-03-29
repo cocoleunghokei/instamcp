@@ -110,15 +110,26 @@
         <h1 class="text-5xl font-headline font-extrabold tracking-tight text-on-surface mb-2">Skill Library</h1>
         <p class="text-on-surface-variant max-w-xl text-lg">Browse and activate MCP skills discovered through your Instagram saves.</p>
       </div>
-      <div class="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
-        <button onclick="filterTab('all')" id="tab-all" class="tab-btn px-4 py-2 bg-surface-container-highest text-primary rounded-md text-sm font-medium">All Skills</button>
-        <button onclick="filterTab('installed')" id="tab-installed" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Installed</button>
-        <button onclick="filterTab('new')" id="tab-new" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">New</button>
+      <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg flex-wrap">
+        <button onclick="filterTab('all')" id="tab-all" class="tab-btn px-4 py-2 bg-surface-container-highest text-primary rounded-md text-sm font-medium">All</button>
+        <button onclick="filterTab('Skills')" id="tab-Skills" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Skills</button>
+        <button onclick="filterTab('Agents')" id="tab-Agents" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Agents</button>
+        <button onclick="filterTab('Tips')" id="tab-Tips" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Tips</button>
+        <button onclick="filterTab('News')" id="tab-News" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">News</button>
       </div>
     </div>
 
+    <!-- Installed filter — only shown on Skills/Agents tabs -->
+    <div id="installed-filter-row" class="hidden mt-4">
+      <button onclick="toggleInstalledFilter()" id="installed-filter-btn"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg border border-outline-variant/30 text-sm text-outline hover:text-on-surface hover:border-outline transition-colors">
+        <span class="material-symbols-outlined text-sm">check_box_outline_blank</span>
+        Installed only
+      </button>
+    </div>
+
     <!-- Filter Row -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-12 gap-4">
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-12 gap-4">
       <div class="md:col-span-8 relative">
         <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
         <input id="skill-search" oninput="renderSkills()" class="w-full bg-surface-container-low border-none rounded-xl py-4 pl-12 pr-4 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary transition-all outline-none" placeholder="Search by name, category, or capability..." type="text"/>
@@ -271,31 +282,61 @@
   let skills = [];
   let installed = JSON.parse(localStorage.getItem('installed_skills') || '[]');
   let activeTab = 'all';
+  let installedOnly = false;
   let visibleCount = 12;
   let currentModalSkill = null;
+
+  const TYPE_COLORS = {
+    Skills: 'bg-primary/15 text-primary',
+    Agents: 'bg-purple-500/15 text-purple-300',
+    Tips:   'bg-amber-500/15 text-amber-300',
+    News:   'bg-emerald-500/15 text-emerald-300',
+  };
 
   function init() {
     const saved = localStorage.getItem('crawl_results');
     if (saved) {
       try {
         const r = JSON.parse(saved);
-        // Merge crawl results with default skills
-        const crawlNames = (r.skills || []).map(s => s.name);
-        skills = DEFAULT_SKILLS.map(s => ({
-          ...s,
-          fromCrawl: crawlNames.includes(s.name)
-        }));
-      } catch(e) {
-        skills = DEFAULT_SKILLS;
-      }
-    } else {
-      skills = DEFAULT_SKILLS;
+        if ((r.skills || []).length > 0) {
+          // Use crawl-discovered skills, deduplicated by postUrl
+          const seen = new Set();
+          skills = (r.skills || []).filter(s => {
+            if (seen.has(s.postUrl)) return false;
+            seen.add(s.postUrl);
+            return true;
+          }).map((s, i) => ({
+            id: 1000 + i,
+            name: s.name,
+            category: s.category || 'AI',
+            type: s.type || 'Skills',
+            desc: s.reason || s.caption || '',
+            icon: iconForCategory(s.category),
+            tag: s.category || 'AI',
+            postUrl: s.postUrl,
+            hashtags: s.hashtags,
+          }));
+          renderSkills();
+          return;
+        }
+      } catch(e) {}
     }
+    skills = DEFAULT_SKILLS;
     renderSkills();
+  }
+
+  function iconForCategory(cat) {
+    const map = {
+      'MCP Servers': 'hub', 'Claude Tools': 'psychology', 'AI Frameworks': 'account_tree',
+      'LLM Tooling': 'smart_toy', 'Dev Tools': 'code', 'Automation': 'auto_mode',
+      'Agents': 'support_agent', 'Prompting': 'edit_note',
+    };
+    return map[cat] || 'auto_awesome';
   }
 
   function filterTab(tab) {
     activeTab = tab;
+    installedOnly = false;
     document.querySelectorAll('.tab-btn').forEach(b => {
       b.classList.remove('bg-surface-container-highest', 'text-primary');
       b.classList.add('text-outline');
@@ -303,7 +344,33 @@
     const active = document.getElementById('tab-' + tab);
     active.classList.add('bg-surface-container-highest', 'text-primary');
     active.classList.remove('text-outline');
+
+    // Show installed filter only on Skills and Agents tabs
+    const filterRow = document.getElementById('installed-filter-row');
+    if (tab === 'Skills' || tab === 'Agents') {
+      filterRow.classList.remove('hidden');
+    } else {
+      filterRow.classList.add('hidden');
+    }
+    updateInstalledFilterBtn();
     renderSkills();
+  }
+
+  function toggleInstalledFilter() {
+    installedOnly = !installedOnly;
+    updateInstalledFilterBtn();
+    renderSkills();
+  }
+
+  function updateInstalledFilterBtn() {
+    const btn = document.getElementById('installed-filter-btn');
+    if (installedOnly) {
+      btn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/60 text-sm text-primary bg-primary/10 transition-colors';
+      btn.querySelector('.material-symbols-outlined').textContent = 'check_box';
+    } else {
+      btn.className = 'flex items-center gap-2 px-4 py-2 rounded-lg border border-outline-variant/30 text-sm text-outline hover:text-on-surface hover:border-outline transition-colors';
+      btn.querySelector('.material-symbols-outlined').textContent = 'check_box_outline_blank';
+    }
   }
 
   function renderSkills() {
@@ -312,12 +379,13 @@
     const query = searchVal || globalSearch;
     const categoryVal = document.getElementById('category-filter')?.value || '';
     const sortVal = document.getElementById('sort-filter')?.value || 'latest';
+    const TYPE_TABS = ['Skills', 'Agents', 'Tips', 'News'];
 
     let filtered = skills.filter(s => {
-      if (activeTab === 'installed' && !installed.includes(s.id)) return false;
-      if (activeTab === 'new' && !s.isNew) return false;
+      if (TYPE_TABS.includes(activeTab) && s.type !== activeTab) return false;
+      if (installedOnly && !installed.includes(s.id)) return false;
       if (categoryVal && s.category !== categoryVal) return false;
-      if (query && !s.name.toLowerCase().includes(query) && !s.desc.toLowerCase().includes(query) && !s.category.toLowerCase().includes(query)) return false;
+      if (query && !s.name.toLowerCase().includes(query) && !(s.desc||'').toLowerCase().includes(query) && !(s.category||'').toLowerCase().includes(query)) return false;
       return true;
     });
 
@@ -387,18 +455,23 @@
       `;
     }
 
+    const typeColor = TYPE_COLORS[skill.type] || TYPE_COLORS['Skills'];
+    const openUrl = skill.postUrl ? `window.open(${JSON.stringify(skill.postUrl)},'_blank')` : `openInstallModal(${skill.id})`;
     return `
       <div class="bg-surface-container-low rounded-xl p-6 flex flex-col skill-card hover:bg-surface-container-high">
         <div class="flex justify-between items-start mb-4">
           <div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
             <span class="material-symbols-outlined text-primary">${skill.icon}</span>
           </div>
-          <span class="text-[10px] text-outline font-bold tracking-widest uppercase">${skill.category}</span>
+          <div class="flex flex-col items-end gap-1">
+            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${typeColor}">${skill.type || 'Skills'}</span>
+            <span class="text-[10px] text-outline font-bold tracking-widest uppercase">${skill.category}</span>
+          </div>
         </div>
         <h4 class="text-lg font-bold text-on-surface mb-2">${skill.name}</h4>
-        <p class="text-on-surface-variant text-sm mb-6 flex-1">${skill.desc}</p>
-        <button onclick="openInstallModal(${skill.id})" class="install-btn w-full bg-surface-container-highest text-on-surface font-bold py-2.5 rounded-full text-xs hover:bg-primary/20 transition-colors ${isInstalled ? 'installed' : ''}">
-          ${isInstalled ? '✓ Installed' : 'Install'}
+        <p class="text-on-surface-variant text-sm mb-6 flex-1 line-clamp-3">${skill.desc}</p>
+        <button onclick="${openUrl}" class="install-btn w-full bg-surface-container-highest text-on-surface font-bold py-2.5 rounded-full text-xs hover:bg-primary/20 transition-colors ${isInstalled ? 'installed' : ''}">
+          ${skill.postUrl ? 'Open Post' : (isInstalled ? '✓ Installed' : 'Install')}
         </button>
       </div>
     `;

@@ -1,9 +1,11 @@
 node_modules/
 
 # Instagram session cookies - NEVER commit
+session.json
 server/session.json
 
 # Crawl results may contain post content
+results.json
 server/results.json
 
 # Env files

@@ -2,18 +2,42 @@ import express from 'express';
 import cors from 'cors';
 import fs from 'fs/promises';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { loginInstagram, fetchSavedPosts } from './instagram.js';
-import { classifyPosts, verifyAnthropicKey } from './classifier.js';
+import { classifyPosts, verifyAnthropicKey, verifyGroqKey, verifyOpenRouterKey } from './classifier.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const PORT = 3000;
-const RESULTS_FILE = path.resolve('./results.json');
+const DATA_DIR = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, 'data')
+  : path.resolve('.');
+const RESULTS_FILE = path.join(DATA_DIR, 'results.json');
+
+// Ensure data directory exists
+await fs.mkdir(DATA_DIR, { recursive: true });
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+// ── Optional password protection ──────────────────────────────
+// Set APP_PASSWORD env var to require HTTP Basic Auth on all routes.
+const APP_PASSWORD = process.env.APP_PASSWORD;
+if (APP_PASSWORD) {
+  app.use((req, res, next) => {
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Basic ')) {
+      const [, pass] = Buffer.from(auth.slice(6), 'base64').toString().split(':');
+      if (pass === APP_PASSWORD) return next();
+    }
+    res.set('WWW-Authenticate', 'Basic realm="InstaMCP"');
+    res.status(401).send('Unauthorized');
+  });
+}
+
 // Serve the web UI
-app.use(express.static(path.resolve('../web')));
+app.use(express.static(path.join(__dirname, '../web')));
 
 // ── Health check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -38,13 +62,34 @@ app.post('/api/test-anthropic', async (req, res) => {
   res.json(result);
 });
 
+// ── Test Groq API key ─────────────────────────────────────────
+app.post('/api/test-groq', async (req, res) => {
+  const { groqKey } = req.body;
+  if (!groqKey) return res.status(400).json({ ok: false, error: 'Groq API key required.' });
+  const result = await verifyGroqKey(groqKey);
+  res.json(result);
+});
+
+// ── Test OpenRouter API key ───────────────────────────────────
+app.post('/api/test-openrouter', async (req, res) => {
+  const { openRouterKey } = req.body;
+  if (!openRouterKey) return res.status(400).json({ ok: false, error: 'OpenRouter API key required.' });
+  const result = await verifyOpenRouterKey(openRouterKey);
+  res.json(result);
+});
+
 // ── Start a crawl ─────────────────────────────────────────────
 // Streams progress via Server-Sent Events so the frontend can update live.
 app.get('/api/crawl', async (req, res) => {
-  const { apiKey, model, batchSize = 100, includeReels = true, activeCategories } = req.query;
+  const { apiKey, groqKey, openRouterKey, model, batchSize = 100, includeReels = true, activeCategories, maxResults = 500 } = req.query;
 
-  if (!apiKey) {
-    return res.status(400).json({ ok: false, error: 'Anthropic API key required. Set it in Settings.' });
+  const ollamaModels = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
+  const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+  const isOllama = ollamaModels.some(m => model?.startsWith(m));
+  const isGroq = groqModels.includes(model);
+  const isOpenRouter = model?.includes('/');
+  if (!apiKey && !isOllama && !(isGroq && groqKey) && !(isOpenRouter && openRouterKey)) {
+    return res.status(400).json({ ok: false, error: 'API key required. Add an OpenRouter or Groq key in Settings, or select an Ollama model to run locally.' });
   }
 
   // Set up SSE
@@ -78,7 +123,7 @@ app.get('/api/crawl', async (req, res) => {
 
     for (let i = 0; i < posts.length; i += CHUNK) {
       const chunk = posts.slice(i, i + CHUNK);
-      const classified = await classifyPosts(chunk, { apiKey, model, activeCategories: categories });
+      const classified = await classifyPosts(chunk, { apiKey, groqKey, openRouterKey, model, activeCategories: categories });
       results.push(...classified);
 
       const progress = 40 + Math.floor((i / posts.length) * 50);
@@ -91,21 +136,50 @@ app.get('/api/crawl', async (req, res) => {
 
     const aiResults = results.filter(r => r.isAiRelated);
 
-    // Persist results
+    const newSkills = aiResults.map(r => ({
+      name: r.skillName || r.post.postUrl,
+      category: r.category,
+      type: r.type || 'Skills',
+      confidence: r.confidence,
+      reason: r.reason,
+      postUrl: r.post.postUrl,
+      caption: r.post.caption?.slice(0, 200),
+      hashtags: r.post.hashtags,
+    }));
+
+    // Merge with existing results — deduplicate by postUrl, new crawl wins on conflicts
+    let existingSkills = [];
+    let existingTotalSeen = 0;
+    try {
+      const existing = JSON.parse(await fs.readFile(RESULTS_FILE, 'utf8'));
+      existingSkills = existing.skills || [];
+      existingTotalSeen = existing.totalSeen || existing.total || 0;
+    } catch { /* first crawl */ }
+
+    const skillMap = new Map(existingSkills.map(s => [s.postUrl, s]));
+    for (const s of newSkills) skillMap.set(s.postUrl, s);
+    let mergedSkills = Array.from(skillMap.values());
+
+    // Enforce max results cap — trim by lowest confidence first
+    const cap = parseInt(maxResults);
+    if (cap > 0 && mergedSkills.length > cap) {
+      mergedSkills = mergedSkills
+        .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+        .slice(0, cap);
+    }
+
+    // Track unique posts seen across all crawls (union by postUrl)
+    const seenUrlsOld = new Set(existingSkills.map(s => s.postUrl));
+    const newUniqueCount = posts.filter(p => !seenUrlsOld.has(p.postUrl)).length;
+    const totalSeen = existingTotalSeen + newUniqueCount;
+
     const output = {
       timestamp: new Date().toISOString(),
-      total: posts.length,
-      aiCount: aiResults.length,
-      relevance: posts.length > 0 ? Math.round((aiResults.length / posts.length) * 100) : 0,
-      skills: aiResults.map(r => ({
-        name: r.skillName || r.post.postUrl,
-        category: r.category,
-        confidence: r.confidence,
-        reason: r.reason,
-        postUrl: r.post.postUrl,
-        caption: r.post.caption?.slice(0, 200),
-        hashtags: r.post.hashtags,
-      })),
+      total: posts.length,         // posts fetched this crawl session
+      totalSeen,                   // cumulative unique posts ever fetched
+      aiCount: mergedSkills.length,
+      relevance: totalSeen > 0 ? Math.round((mergedSkills.length / totalSeen) * 100) : 0,
+      skills: mergedSkills,
     };
 
     await fs.writeFile(RESULTS_FILE, JSON.stringify(output, null, 2));

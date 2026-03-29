@@ -105,25 +105,88 @@
       </div>
     </section>
 
-    <!-- Anthropic Section -->
+    <!-- AI Provider Section -->
     <section class="bg-surface-container-low rounded-xl p-8 mb-6">
       <div class="flex items-center gap-3 mb-6">
         <div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center">
           <span class="material-symbols-outlined text-primary">psychology</span>
         </div>
         <div>
-          <h2 class="font-headline font-bold text-on-surface">Anthropic API</h2>
-          <p class="text-xs text-outline">Used to classify posts and identify AI/MCP tools</p>
-        </div>
-        <div id="ai-status" class="ml-auto flex items-center gap-2 text-xs text-outline">
-          <div class="w-2 h-2 rounded-full bg-outline"></div>
-          Not verified
+          <h2 class="font-headline font-bold text-on-surface">AI Classification</h2>
+          <p class="text-xs text-outline">Choose a provider to classify your saved posts</p>
         </div>
       </div>
 
       <div class="space-y-4">
         <div>
-          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">API Key</label>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Model</label>
+          <select id="ai-model" onchange="onModelChange()" class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent focus:border-primary/40 transition-colors outline-none cursor-pointer">
+            <optgroup label="OpenRouter — free cloud API">
+              <option value="meta-llama/llama-3.3-70b-instruct:free">llama-3.3-70b (recommended, free)</option>
+              <option value="meta-llama/llama-3.1-8b-instruct:free">llama-3.1-8b (faster, free)</option>
+              <option value="mistralai/mistral-7b-instruct:free">mistral-7b (free)</option>
+              <option value="google/gemma-3-4b-it:free">gemma-3-4b (free)</option>
+            </optgroup>
+            <optgroup label="Groq — free cloud API">
+              <option value="llama-3.3-70b-versatile">llama-3.3-70b-versatile (free)</option>
+              <option value="llama3-8b-8192">llama3-8b-8192 (faster, free)</option>
+            </optgroup>
+            <optgroup label="Ollama — on-device, no internet">
+              <option value="llama3.2">llama3.2 (local)</option>
+            </optgroup>
+            <optgroup label="Anthropic — paid API">
+              <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+              <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (cheaper)</option>
+              <option value="claude-opus-4-6">claude-opus-4-6 (most capable)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- OpenRouter key (shown for OpenRouter models) -->
+        <div id="openrouter-key-row">
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">OpenRouter API Key <span class="text-emerald-400 normal-case tracking-normal font-normal">— free at openrouter.ai/keys</span></label>
+          <div class="relative">
+            <input id="openrouter-key" type="password" placeholder="sk-or-••••••••••••••••••••••••••••••••"
+              class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-outline border border-transparent focus:border-primary/40 transition-colors pr-12 font-mono"/>
+            <button onclick="toggleVisibility('openrouter-key')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-3 mt-3">
+            <button onclick="testOpenRouter()" id="openrouter-test-btn" class="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold hover:bg-primary/20 transition-colors">
+              Verify Key
+            </button>
+            <div id="openrouter-status" class="flex items-center gap-2 text-xs text-outline">
+              <div class="w-2 h-2 rounded-full bg-outline"></div>
+              Not verified
+            </div>
+          </div>
+        </div>
+
+        <!-- Groq key (shown for Groq models) -->
+        <div id="groq-key-row" class="hidden">
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Groq API Key <span class="text-emerald-400 normal-case tracking-normal font-normal">— free at console.groq.com</span></label>
+          <div class="relative">
+            <input id="groq-key" type="password" placeholder="gsk_••••••••••••••••••••••••••••••••"
+              class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-outline border border-transparent focus:border-primary/40 transition-colors pr-12 font-mono"/>
+            <button onclick="toggleVisibility('groq-key')" class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors">
+              <span class="material-symbols-outlined text-sm">visibility</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-3 mt-3">
+            <button onclick="testGroq()" id="groq-test-btn" class="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold hover:bg-primary/20 transition-colors">
+              Verify Key
+            </button>
+            <div id="groq-status" class="flex items-center gap-2 text-xs text-outline">
+              <div class="w-2 h-2 rounded-full bg-outline"></div>
+              Not verified
+            </div>
+          </div>
+        </div>
+
+        <!-- Anthropic key (shown for Claude models) -->
+        <div id="anthropic-key-row" class="hidden">
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Anthropic API Key</label>
           <div class="relative">
             <input id="anthropic-key" type="password" placeholder="sk-ant-••••••••••••••••••••••••••••••••"
               class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-outline border border-transparent focus:border-primary/40 transition-colors pr-12 font-mono"/>
@@ -131,19 +194,20 @@
               <span class="material-symbols-outlined text-sm">visibility</span>
             </button>
           </div>
+          <div class="flex items-center gap-3 mt-3">
+            <button onclick="testAnthropic()" id="ai-test-btn" class="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold hover:bg-primary/20 transition-colors">
+              Verify Key
+            </button>
+            <div id="ai-status" class="flex items-center gap-2 text-xs text-outline">
+              <div class="w-2 h-2 rounded-full bg-outline"></div>
+              Not verified
+            </div>
+          </div>
         </div>
-        <div>
-          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Model</label>
-          <select id="ai-model" class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent focus:border-primary/40 transition-colors outline-none cursor-pointer">
-            <option value="claude-sonnet-4-6">claude-sonnet-4-6 (recommended)</option>
-            <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (faster, cheaper)</option>
-            <option value="claude-opus-4-6">claude-opus-4-6 (most capable)</option>
-          </select>
-        </div>
-        <div class="pt-2">
-          <button onclick="testAnthropic()" id="ai-test-btn" class="px-6 py-2.5 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold hover:bg-primary/20 transition-colors">
-            Verify Key
-          </button>
+
+        <!-- Ollama info (shown for Ollama models) -->
+        <div id="ollama-info-row" class="hidden px-4 py-3 rounded-lg bg-surface-container text-xs text-on-surface-variant">
+          Ollama runs locally — no API key needed. Make sure <code class="font-mono text-primary">ollama serve</code> is running and <code class="font-mono text-primary">llama3.2</code> is pulled.
         </div>
       </div>
     </section>
@@ -176,6 +240,18 @@
           <div class="flex flex-wrap gap-2" id="category-chips">
             <!-- populated by JS -->
           </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Max saved results</label>
+          <select id="max-results" class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent outline-none cursor-pointer">
+            <option value="100">100 results</option>
+            <option value="250">250 results</option>
+            <option value="500" selected>500 results</option>
+            <option value="1000">1000 results</option>
+            <option value="0">Unlimited</option>
+          </select>
+          <p class="text-[11px] text-outline mt-2">When the limit is reached, older lower-confidence results are removed first.</p>
         </div>
 
         <div class="flex items-center justify-between py-3 border-t border-outline-variant/20">
@@ -251,9 +327,13 @@
     const s = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
     if (s.igUsername) document.getElementById('ig-username').value = s.igUsername;
     if (s.igPassword) document.getElementById('ig-password').value = s.igPassword;
+    if (s.openRouterKey) document.getElementById('openrouter-key').value = s.openRouterKey;
+    if (s.groqKey) document.getElementById('groq-key').value = s.groqKey;
     if (s.anthropicKey) document.getElementById('anthropic-key').value = s.anthropicKey;
     if (s.model) document.getElementById('ai-model').value = s.model;
+    onModelChange();
     if (s.batchSize) document.getElementById('batch-size').value = s.batchSize;
+    if (s.maxResults !== undefined) document.getElementById('max-results').value = s.maxResults;
     if (s.activeCategories) {
       activeCategories = new Set(s.activeCategories);
       document.querySelectorAll('[data-cat]').forEach(chip => {
@@ -268,6 +348,22 @@
     // Show connection status if previously verified
     if (s.igVerified) setStatus('ig-status', true, 'Connected');
     if (s.aiVerified) setStatus('ai-status', true, 'Verified');
+    if (s.groqVerified) setStatus('groq-status', true, 'Verified');
+    if (s.openRouterVerified) setStatus('openrouter-status', true, 'Verified');
+  }
+
+  const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+  const OLLAMA_MODELS = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
+
+  function onModelChange() {
+    const model = document.getElementById('ai-model').value;
+    const isGroq = GROQ_MODELS.includes(model);
+    const isOllama = OLLAMA_MODELS.some(m => model.startsWith(m));
+    const isOpenRouter = model.includes('/');
+    document.getElementById('openrouter-key-row').classList.toggle('hidden', !isOpenRouter);
+    document.getElementById('groq-key-row').classList.toggle('hidden', !isGroq);
+    document.getElementById('anthropic-key-row').classList.toggle('hidden', !(model.startsWith('claude')));
+    document.getElementById('ollama-info-row').classList.toggle('hidden', !isOllama);
   }
 
   function toggleCategory(cat, btn) {
@@ -336,7 +432,7 @@
 
     // Call backend test endpoint
     try {
-      const res = await fetch('http://localhost:3000/api/test-instagram', {
+      const res = await fetch('/api/test-instagram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: user, password: pass })
@@ -359,6 +455,70 @@
     btn.disabled = false;
   }
 
+  async function testOpenRouter() {
+    const btn = document.getElementById('openrouter-test-btn');
+    const key = document.getElementById('openrouter-key').value;
+    if (!key) { showBanner('Enter your OpenRouter API key first.', false); return; }
+
+    btn.textContent = 'Verifying...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/test-openrouter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ openRouterKey: key })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus('openrouter-status', true, 'Verified');
+        showBanner('OpenRouter API key is valid.', true);
+        const s = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
+        localStorage.setItem('instamcp_settings', JSON.stringify({ ...s, openRouterVerified: true }));
+      } else {
+        setStatus('openrouter-status', false, 'Invalid key');
+        showBanner(data.error || 'OpenRouter key verification failed.', false);
+      }
+    } catch {
+      setStatus('openrouter-status', false, 'Server offline');
+      showBanner('Backend server not running.', false);
+    }
+    btn.textContent = 'Verify Key';
+    btn.disabled = false;
+  }
+
+  async function testGroq() {
+    const btn = document.getElementById('groq-test-btn');
+    const key = document.getElementById('groq-key').value;
+    if (!key) { showBanner('Enter your Groq API key first.', false); return; }
+
+    btn.textContent = 'Verifying...';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/test-groq', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ groqKey: key })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setStatus('groq-status', true, 'Verified');
+        showBanner('Groq API key is valid.', true);
+        const s = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
+        localStorage.setItem('instamcp_settings', JSON.stringify({ ...s, groqVerified: true }));
+      } else {
+        setStatus('groq-status', false, 'Invalid key');
+        showBanner(data.error || 'Groq key verification failed.', false);
+      }
+    } catch {
+      setStatus('groq-status', false, 'Server offline');
+      showBanner('Backend server not running.', false);
+    }
+    btn.textContent = 'Verify Key';
+    btn.disabled = false;
+  }
+
   async function testAnthropic() {
     const btn = document.getElementById('ai-test-btn');
     const key = document.getElementById('anthropic-key').value;
@@ -368,7 +528,7 @@
     btn.disabled = true;
 
     try {
-      const res = await fetch('http://localhost:3000/api/test-anthropic', {
+      const res = await fetch('/api/test-anthropic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey: key })
@@ -395,9 +555,12 @@
     const settings = {
       igUsername: document.getElementById('ig-username').value,
       igPassword: document.getElementById('ig-password').value,
+      openRouterKey: document.getElementById('openrouter-key').value,
+      groqKey: document.getElementById('groq-key').value,
       anthropicKey: document.getElementById('anthropic-key').value,
       model: document.getElementById('ai-model').value,
       batchSize: document.getElementById('batch-size').value,
+      maxResults: parseInt(document.getElementById('max-results').value),
       activeCategories: [...activeCategories],
       autoCrawl: document.getElementById('auto-crawl').dataset.on === 'true',
       includeReels: document.getElementById('include-reels').dataset.on === 'true',
