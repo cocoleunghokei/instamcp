@@ -117,6 +117,7 @@
         <button onclick="filterTab('Agents')" id="tab-Agents" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Agents</button>
         <button onclick="filterTab('Tips')" id="tab-Tips" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">Tips</button>
         <button onclick="filterTab('News')" id="tab-News" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium">News</button>
+        <button onclick="filterTab('saved')" id="tab-saved" class="tab-btn px-4 py-2 text-outline hover:text-on-surface transition-colors text-sm font-medium flex items-center gap-1"><span class="material-symbols-outlined text-sm">bookmark</span>Saved</button>
       </div>
     </div>
 
@@ -282,6 +283,7 @@
 
   let skills = [];
   let installed = JSON.parse(localStorage.getItem('installed_skills') || '[]');
+  let savedSkills = JSON.parse(localStorage.getItem('saved_skills') || '[]');
   let activeTab = 'all';
   let installedOnly = false;
   let visibleCount = 12;
@@ -383,7 +385,9 @@
     const TYPE_TABS = ['Skills', 'Agents', 'Tips', 'News'];
 
     let filtered = skills.filter(s => {
-      if (activeTab === 'MCP') {
+      if (activeTab === 'saved') {
+        if (!savedSkills.includes(s.id)) return false;
+      } else if (activeTab === 'MCP') {
         if (!(s.category || '').toLowerCase().includes('mcp')) return false;
       } else if (TYPE_TABS.includes(activeTab) && s.type !== activeTab) return false;
       if (installedOnly && !installed.includes(s.id)) return false;
@@ -460,15 +464,22 @@
 
     const typeColor = TYPE_COLORS[skill.type] || TYPE_COLORS['Skills'];
     const openUrl = skill.postUrl ? `window.open(${JSON.stringify(skill.postUrl)},'_blank')` : `openInstallModal(${skill.id})`;
+    const isSaved = savedSkills.includes(skill.id);
     return `
       <div class="bg-surface-container-low rounded-xl p-6 flex flex-col skill-card hover:bg-surface-container-high">
         <div class="flex justify-between items-start mb-4">
           <div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
             <span class="material-symbols-outlined text-primary">${skill.icon}</span>
           </div>
-          <div class="flex flex-col items-end gap-1">
-            <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${typeColor}">${skill.type || 'Skills'}</span>
-            <span class="text-[10px] text-outline font-bold tracking-widest uppercase">${skill.category}</span>
+          <div class="flex items-start gap-2">
+            <button onclick="toggleSave(${skill.id}, event)" title="${isSaved ? 'Unsave' : 'Save'}"
+              class="p-1 rounded-lg transition-colors ${isSaved ? 'text-primary' : 'text-outline hover:text-primary'}">
+              <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' ${isSaved ? 1 : 0};">bookmark</span>
+            </button>
+            <div class="flex flex-col items-end gap-1">
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${typeColor}">${skill.type || 'Skills'}</span>
+              <span class="text-[10px] text-outline font-bold tracking-widest uppercase">${skill.category}</span>
+            </div>
           </div>
         </div>
         <h4 class="text-lg font-bold text-on-surface mb-2">${skill.name}</h4>
@@ -478,6 +489,15 @@
         </button>
       </div>
     `;
+  }
+
+  function toggleSave(skillId, event) {
+    event.stopPropagation();
+    const idx = savedSkills.indexOf(skillId);
+    if (idx === -1) savedSkills.push(skillId);
+    else savedSkills.splice(idx, 1);
+    localStorage.setItem('saved_skills', JSON.stringify(savedSkills));
+    renderSkills();
   }
 
   function loadMore() {
