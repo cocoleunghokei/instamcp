@@ -226,6 +226,24 @@
 
       <div class="space-y-6">
         <div>
+          <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Date range</label>
+          <div class="flex items-center gap-3">
+            <div class="flex-1">
+              <label class="text-[10px] text-outline block mb-1">Start date</label>
+              <input id="date-start" type="date" min="2026-01-01"
+                class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent focus:border-primary/40 transition-colors outline-none cursor-pointer"
+                onchange="onDateStartChange()"/>
+            </div>
+            <div class="flex-1">
+              <label class="text-[10px] text-outline block mb-1">End date <span class="text-outline/60">(max 90 days)</span></label>
+              <input id="date-end" type="date" readonly
+                class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-outline border border-transparent outline-none cursor-not-allowed"/>
+            </div>
+          </div>
+          <p class="text-[11px] text-outline mt-2">Only posts saved within this range will be classified. End date is auto-set to start + 90 days.</p>
+        </div>
+
+        <div>
           <label class="text-[10px] uppercase tracking-widest text-outline font-bold block mb-2">Posts per crawl</label>
           <select id="batch-size" class="w-full bg-surface-container-lowest rounded-lg px-4 py-3 text-sm text-on-surface border border-transparent outline-none cursor-pointer">
             <option value="50">50 posts</option>
@@ -334,6 +352,8 @@
     onModelChange();
     if (s.batchSize) document.getElementById('batch-size').value = s.batchSize;
     if (s.maxResults !== undefined) document.getElementById('max-results').value = s.maxResults;
+    if (s.dateStart) { document.getElementById('date-start').value = s.dateStart; onDateStartChange(); }
+    if (s.dateEnd) document.getElementById('date-end').value = s.dateEnd;
     if (s.activeCategories) {
       activeCategories = new Set(s.activeCategories);
       document.querySelectorAll('[data-cat]').forEach(chip => {
@@ -354,6 +374,16 @@
 
   const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
   const OLLAMA_MODELS = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
+
+  function onDateStartChange() {
+    const start = document.getElementById('date-start').value;
+    if (!start) { document.getElementById('date-end').value = ''; return; }
+    const end = new Date(start);
+    end.setDate(end.getDate() + 90);
+    // Cap at today
+    const today = new Date();
+    document.getElementById('date-end').value = (end > today ? today : end).toISOString().slice(0, 10);
+  }
 
   function onModelChange() {
     const model = document.getElementById('ai-model').value;
@@ -561,6 +591,8 @@
       model: document.getElementById('ai-model').value,
       batchSize: document.getElementById('batch-size').value,
       maxResults: parseInt(document.getElementById('max-results').value),
+      dateStart: document.getElementById('date-start').value,
+      dateEnd: document.getElementById('date-end').value,
       activeCategories: [...activeCategories],
       autoCrawl: document.getElementById('auto-crawl').dataset.on === 'true',
       includeReels: document.getElementById('include-reels').dataset.on === 'true',

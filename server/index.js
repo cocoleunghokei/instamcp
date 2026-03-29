@@ -81,7 +81,7 @@ app.post('/api/test-openrouter', async (req, res) => {
 // ── Start a crawl ─────────────────────────────────────────────
 // Streams progress via Server-Sent Events so the frontend can update live.
 app.get('/api/crawl', async (req, res) => {
-  const { apiKey, groqKey, openRouterKey, model, batchSize = 100, includeReels = true, activeCategories, maxResults = 500 } = req.query;
+  const { apiKey, groqKey, openRouterKey, model, batchSize = 100, includeReels = true, activeCategories, maxResults = 500, dateStart, dateEnd } = req.query;
 
   const ollamaModels = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
   const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
@@ -114,21 +114,36 @@ app.get('/api/crawl', async (req, res) => {
       return res.end();
     }
 
-    send('status', { message: `Found ${posts.length} saved posts. Classifying...`, progress: 40, total: posts.length });
+    // Filter by date range if specified
+    let filteredPosts = posts;
+    if (dateStart || dateEnd) {
+      const start = dateStart ? new Date(dateStart) : null;
+      const end = dateEnd ? new Date(dateEnd + 'T23:59:59') : null;
+      filteredPosts = posts.filter(p => {
+        if (!p.timestamp) return true; // keep posts with no timestamp
+        const t = new Date(p.timestamp);
+        if (start && t < start) return false;
+        if (end && t > end) return false;
+        return true;
+      });
+      send('status', { message: `${filteredPosts.length} posts in date range (${posts.length} total fetched)`, progress: 38 });
+    }
+
+    send('status', { message: `Found ${filteredPosts.length} posts to classify...`, progress: 40, total: filteredPosts.length });
 
     // Classify in chunks, sending progress updates
     const categories = activeCategories ? JSON.parse(activeCategories) : undefined;
     const CHUNK = 10;
     const results = [];
 
-    for (let i = 0; i < posts.length; i += CHUNK) {
-      const chunk = posts.slice(i, i + CHUNK);
+    for (let i = 0; i < filteredPosts.length; i += CHUNK) {
+      const chunk = filteredPosts.slice(i, i + CHUNK);
       const classified = await classifyPosts(chunk, { apiKey, groqKey, openRouterKey, model, activeCategories: categories });
       results.push(...classified);
 
-      const progress = 40 + Math.floor((i / posts.length) * 50);
+      const progress = 40 + Math.floor((i / filteredPosts.length) * 50);
       send('status', {
-        message: `Classified ${Math.min(i + CHUNK, posts.length)} / ${posts.length} posts...`,
+        message: `Classified ${Math.min(i + CHUNK, filteredPosts.length)} / ${filteredPosts.length} posts...`,
         progress,
         classified: results.filter(r => r.isAiRelated).length,
       });
@@ -175,7 +190,7 @@ app.get('/api/crawl', async (req, res) => {
 
     const output = {
       timestamp: new Date().toISOString(),
-      total: posts.length,         // posts fetched this crawl session
+      total: filteredPosts.length, // posts classified this crawl session
       totalSeen,                   // cumulative unique posts ever fetched
       aiCount: mergedSkills.length,
       relevance: totalSeen > 0 ? Math.round((mergedSkills.length / totalSeen) * 100) : 0,

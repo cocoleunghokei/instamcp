@@ -328,6 +328,8 @@
       batchSize: settings.batchSize || 100,
       includeReels: settings.includeReels !== false,
       maxResults: settings.maxResults || 500,
+      ...(settings.dateStart ? { dateStart: settings.dateStart } : {}),
+      ...(settings.dateEnd ? { dateEnd: settings.dateEnd } : {}),
       ...(settings.activeCategories ? { activeCategories: JSON.stringify(settings.activeCategories) } : {}),
     });
 
