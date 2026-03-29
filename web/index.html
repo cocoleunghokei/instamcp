@@ -317,12 +317,9 @@
     // Check settings
     const settings = JSON.parse(localStorage.getItem('instamcp_settings') || '{}');
     const ollamaModels = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
-    const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
     const isOllama = ollamaModels.some(m => settings.model?.startsWith(m));
-    const isGroq = groqModels.includes(settings.model);
-    const isOpenRouter = settings.model?.includes('/');
-    if (!settings.anthropicKey && !isOllama && !(isGroq && settings.groqKey) && !(isOpenRouter && settings.openRouterKey)) {
-      alert('Add an OpenRouter or Groq API key in Settings (both free), or select an Ollama model to run locally.');
+    if (!isOllama && !settings.openRouterKey) {
+      alert('Add your OpenRouter API key in Settings (free at openrouter.ai/keys), or select an Ollama model to run locally.');
       window.location.href = 'settings.html';
       return;
     }
@@ -339,8 +336,6 @@
     setBusy(true);
 
     const params = new URLSearchParams({
-      apiKey: settings.anthropicKey || '',
-      groqKey: settings.groqKey || '',
       openRouterKey: settings.openRouterKey || '',
       model: settings.model || 'meta-llama/llama-3.3-70b-instruct:free',
       batchSize: settings.batchSize || 100,

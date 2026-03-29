@@ -4,7 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { loginInstagram, fetchSavedPosts } from './instagram.js';
-import { classifyPosts, verifyAnthropicKey, verifyGroqKey, verifyOpenRouterKey } from './classifier.js';
+import { classifyPosts, verifyOpenRouterKey } from './classifier.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -54,22 +54,6 @@ app.post('/api/test-instagram', async (req, res) => {
   res.json(result);
 });
 
-// ── Test Anthropic API key ────────────────────────────────────
-app.post('/api/test-anthropic', async (req, res) => {
-  const { apiKey } = req.body;
-  if (!apiKey) return res.status(400).json({ ok: false, error: 'API key required.' });
-  const result = await verifyAnthropicKey(apiKey);
-  res.json(result);
-});
-
-// ── Test Groq API key ─────────────────────────────────────────
-app.post('/api/test-groq', async (req, res) => {
-  const { groqKey } = req.body;
-  if (!groqKey) return res.status(400).json({ ok: false, error: 'Groq API key required.' });
-  const result = await verifyGroqKey(groqKey);
-  res.json(result);
-});
-
 // ── Test OpenRouter API key ───────────────────────────────────
 app.post('/api/test-openrouter', async (req, res) => {
   const { openRouterKey } = req.body;
@@ -81,15 +65,12 @@ app.post('/api/test-openrouter', async (req, res) => {
 // ── Start a crawl ─────────────────────────────────────────────
 // Streams progress via Server-Sent Events so the frontend can update live.
 app.get('/api/crawl', async (req, res) => {
-  const { apiKey, groqKey, openRouterKey, model, batchSize = 100, includeReels = true, activeCategories, maxResults = 500, dateStart, dateEnd } = req.query;
+  const { openRouterKey, model, batchSize = 100, includeReels = true, activeCategories, maxResults = 500, dateStart, dateEnd } = req.query;
 
   const ollamaModels = ['llama3.2', 'llama3', 'llama2', 'mistral', 'phi3', 'gemma'];
-  const groqModels = ['llama-3.3-70b-versatile', 'llama3-8b-8192', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
   const isOllama = ollamaModels.some(m => model?.startsWith(m));
-  const isGroq = groqModels.includes(model);
-  const isOpenRouter = model?.includes('/');
-  if (!apiKey && !isOllama && !(isGroq && groqKey) && !(isOpenRouter && openRouterKey)) {
-    return res.status(400).json({ ok: false, error: 'API key required. Add an OpenRouter or Groq key in Settings, or select an Ollama model to run locally.' });
+  if (!isOllama && !openRouterKey) {
+    return res.status(400).json({ ok: false, error: 'OpenRouter API key required. Add it in Settings, or select an Ollama model to run locally.' });
   }
 
   // Set up SSE
@@ -138,7 +119,7 @@ app.get('/api/crawl', async (req, res) => {
 
     for (let i = 0; i < filteredPosts.length; i += CHUNK) {
       const chunk = filteredPosts.slice(i, i + CHUNK);
-      const classified = await classifyPosts(chunk, { apiKey, groqKey, openRouterKey, model, activeCategories: categories });
+      const classified = await classifyPosts(chunk, { openRouterKey, model, activeCategories: categories });
       results.push(...classified);
 
       const progress = 40 + Math.floor((i / filteredPosts.length) * 50);
