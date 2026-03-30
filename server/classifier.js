@@ -59,8 +59,8 @@ const CLASSIFICATION_PROMPT = (postsJson, activeCategories) =>
 Categories: ${activeCategories.join(', ')}.
 Type: "MCP" (MCP servers for Claude), "Skills" (other AI tools), "Agents" (AI agents/frameworks), "Tips" (prompting/tutorials), "News" (announcements/research).
 
-For each post determine if it's AI-related. Respond ONLY with a JSON array, no explanation:
-[{"index":0,"isAiRelated":true,"category":"MCP Servers","type":"MCP","skillName":"Playwright MCP","confidence":0.95,"reason":"..."}]
+For each post determine if it's AI-related. Extract pros (benefits) and cons (downsides/limitations) from the caption AND comments. Use community comments as real-world feedback about the tool. Respond ONLY with a JSON array, no explanation:
+[{"index":0,"isAiRelated":true,"category":"MCP Servers","type":"MCP","skillName":"Playwright MCP","confidence":0.95,"reason":"...","pros":["Easy browser automation","Works with Claude Desktop"],"cons":["Requires Node.js","Can be slow on large pages"]}]
 
 Posts:
 ${JSON.stringify(postsJson)}`;
@@ -78,12 +78,14 @@ function parseClassifications(text, posts) {
       skillName: cls.skillName || null,
       confidence: cls.confidence || 0,
       reason: cls.reason || null,
+      pros: cls.pros || [],
+      cons: cls.cons || [],
     };
   });
 }
 
 function emptyResults(posts) {
-  return posts.map(post => ({ post, isAiRelated: false, category: null, type: null, skillName: null, confidence: 0, reason: null }));
+  return posts.map(post => ({ post, isAiRelated: false, category: null, type: null, skillName: null, confidence: 0, reason: null, pros: [], cons: [] }));
 }
 
 /**
@@ -101,6 +103,7 @@ export async function classifyPosts(posts, { openRouterKey, model = 'meta-llama/
       index: idx,
       caption: p.caption?.slice(0, 500) || '',
       hashtags: p.hashtags?.slice(0, 20) || [],
+      comments: p.comments?.slice(0, 8) || [],
       url: p.postUrl,
     }));
     const prompt = CLASSIFICATION_PROMPT(postsJson, activeCategories);

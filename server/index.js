@@ -132,15 +132,29 @@ app.get('/api/crawl', async (req, res) => {
 
     const aiResults = results.filter(r => r.isAiRelated);
 
+    const typeFromCategory = cat => {
+      if (!cat) return 'Skills';
+      const c = cat.toLowerCase();
+      if (c.includes('mcp') || c.includes('claude')) return 'MCP';
+      if (c.includes('agent') || c.includes('framework')) return 'Agents';
+      if (c.includes('prompt') || c.includes('tutorial')) return 'Tips';
+      if (c.includes('news') || c.includes('research') || c.includes('announcement')) return 'News';
+      return 'Skills';
+    };
+
     const newSkills = aiResults.map(r => ({
       name: r.skillName || r.post.postUrl,
       category: r.category,
-      type: r.type || 'Skills',
+      type: r.type || typeFromCategory(r.category),
       confidence: r.confidence,
       reason: r.reason,
+      pros: r.pros || [],
+      cons: r.cons || [],
       postUrl: r.post.postUrl,
+      mediaUrl: r.post.mediaUrl || '',
       caption: r.post.caption?.slice(0, 200),
       hashtags: r.post.hashtags,
+      comments: r.post.comments?.slice(0, 5) || [],
     }));
 
     // Merge with existing results — deduplicate by postUrl, new crawl wins on conflicts

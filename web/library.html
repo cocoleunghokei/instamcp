@@ -96,7 +96,6 @@
       <input id="global-search" class="bg-surface-container border-none rounded-full px-4 py-1.5 text-sm w-64 focus:ring-2 focus:ring-primary outline-none transition-all" placeholder="Search MCP skills..." type="text"/>
       <span class="material-symbols-outlined absolute right-3 top-1.5 text-outline text-sm">search</span>
     </div>
-    <button class="material-symbols-outlined text-on-surface-variant hover:text-primary p-2 rounded-full transition-colors">account_circle</button>
   </div>
 </nav>
 
@@ -223,6 +222,74 @@
   </div>
 </div>
 
+<!-- Detail Modal -->
+<div id="detail-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeDetailModal()"></div>
+  <div class="relative glass-card rounded-xl max-w-lg w-full shadow-2xl border border-outline-variant/20 max-h-[90vh] overflow-y-auto">
+    <!-- Post image -->
+    <div id="detail-image-wrap" class="hidden rounded-t-xl overflow-hidden">
+      <img id="detail-image" src="" alt="" class="w-full max-h-56 object-cover"/>
+    </div>
+    <div class="p-8">
+      <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-outline hover:text-on-surface transition-colors z-10">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+      <div class="flex items-center gap-3 mb-1">
+        <span id="detail-type-badge" class="text-[9px] font-bold px-2 py-0.5 rounded-full"></span>
+        <span id="detail-category" class="text-[10px] text-outline font-bold tracking-widest uppercase"></span>
+      </div>
+      <h3 class="text-xl font-headline font-bold mb-3" id="detail-title"></h3>
+      <p class="text-on-surface-variant text-sm mb-6 leading-relaxed" id="detail-desc"></p>
+
+      <!-- Pros -->
+      <div id="detail-pros-section" class="hidden mb-4">
+        <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">thumb_up</span> Benefits
+        </h4>
+        <ul id="detail-pros" class="space-y-1.5"></ul>
+      </div>
+
+      <!-- Cons -->
+      <div id="detail-cons-section" class="hidden mb-4">
+        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">thumb_down</span> Limitations
+        </h4>
+        <ul id="detail-cons" class="space-y-1.5"></ul>
+      </div>
+
+      <!-- Community comments -->
+      <div id="detail-comments-section" class="hidden mb-4">
+        <h4 class="text-xs font-bold text-on-surface-variant uppercase tracking-widest mb-2 flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">forum</span> Community Feedback
+        </h4>
+        <ul id="detail-comments" class="space-y-2"></ul>
+      </div>
+
+      <!-- Install config -->
+      <div id="detail-config-section" class="hidden mb-6">
+        <div class="bg-surface-container-lowest rounded-lg p-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[10px] uppercase tracking-widest text-outline font-bold">Claude Desktop Config</span>
+            <button onclick="copyDetailConfig()" class="text-primary text-xs font-bold flex items-center gap-1 hover:gap-2 transition-all">
+              <span class="material-symbols-outlined text-sm">content_copy</span> Copy
+            </button>
+          </div>
+          <pre id="detail-config" class="text-xs text-on-surface-variant font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed"></pre>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <a id="detail-post-link" href="#" target="_blank" rel="noopener" class="hidden flex-1 text-center py-3 bg-surface-container text-on-surface-variant rounded-full font-bold text-sm hover:bg-surface-container-high transition-colors">
+          Open Post
+        </a>
+        <button id="detail-install-btn" onclick="installFromDetail()" class="flex-1 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary-container rounded-full font-bold text-sm hover:scale-[1.02] transition-transform active:scale-95">
+          Mark as Installed
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Copy Toast -->
 <div id="copy-toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 bg-surface-container-highest text-on-surface px-6 py-3 rounded-full text-sm font-medium shadow-lg z-50 flex items-center gap-2">
   <span class="material-symbols-outlined text-emerald-400 text-sm">check_circle</span>
@@ -290,6 +357,7 @@
   let currentModalSkill = null;
 
   const TYPE_COLORS = {
+    MCP:    'bg-blue-500/15 text-blue-300',
     Skills: 'bg-primary/15 text-primary',
     Agents: 'bg-purple-500/15 text-purple-300',
     Tips:   'bg-amber-500/15 text-amber-300',
@@ -312,20 +380,35 @@
             id: 1000 + i,
             name: s.name,
             category: s.category || 'AI',
-            type: s.type || 'Skills',
+            type: (s.type && s.type !== 'Skills') ? s.type : typeFromCategory(s.category),
             desc: s.reason || s.caption || '',
             icon: iconForCategory(s.category),
             tag: s.category || 'AI',
             postUrl: s.postUrl,
             hashtags: s.hashtags,
+            pros: s.pros || [],
+            cons: s.cons || [],
+            mediaUrl: s.mediaUrl || '',
+            comments: s.comments || [],
           }));
+          console.log('[DEBUG] skills after mapping:', skills.map(s => ({name: s.name, type: s.type, category: s.category})));
           renderSkills();
           return;
         }
-      } catch(e) {}
+      } catch(e) { console.error('[DEBUG] init error:', e); }
     }
     skills = DEFAULT_SKILLS;
     renderSkills();
+  }
+
+  function typeFromCategory(cat) {
+    if (!cat) return 'Skills';
+    const c = cat.toLowerCase();
+    if (c.includes('mcp') || c.includes('claude')) return 'MCP';
+    if (c.includes('agent') || c.includes('framework')) return 'Agents';
+    if (c.includes('prompt') || c.includes('tutorial')) return 'Tips';
+    if (c.includes('news') || c.includes('research') || c.includes('announcement')) return 'News';
+    return 'Skills';
   }
 
   function iconForCategory(cat) {
@@ -385,11 +468,13 @@
     const TYPE_TABS = ['Skills', 'Agents', 'Tips', 'News'];
 
     let filtered = skills.filter(s => {
+      const effectiveType = (s.type && s.type !== 'Skills') ? s.type : typeFromCategory(s.category);
       if (activeTab === 'saved') {
         if (!savedSkills.includes(s.id)) return false;
       } else if (activeTab === 'MCP') {
-        if (!(s.category || '').toLowerCase().includes('mcp')) return false;
-      } else if (TYPE_TABS.includes(activeTab) && s.type !== activeTab) return false;
+        const isMCP = effectiveType === 'MCP' || (s.category || '').toLowerCase().includes('mcp');
+        if (!isMCP) return false;
+      } else if (TYPE_TABS.includes(activeTab) && effectiveType !== activeTab) return false;
       if (installedOnly && !installed.includes(s.id)) return false;
       if (categoryVal && s.category !== categoryVal) return false;
       if (query && !s.name.toLowerCase().includes(query) && !(s.desc||'').toLowerCase().includes(query) && !(s.category||'').toLowerCase().includes(query)) return false;
@@ -463,10 +548,9 @@
     }
 
     const typeColor = TYPE_COLORS[skill.type] || TYPE_COLORS['Skills'];
-    const openUrl = skill.postUrl ? `window.open(${JSON.stringify(skill.postUrl)},'_blank')` : `openInstallModal(${skill.id})`;
     const isSaved = savedSkills.includes(skill.id);
     return `
-      <div class="bg-surface-container-low rounded-xl p-6 flex flex-col skill-card hover:bg-surface-container-high">
+      <div class="bg-surface-container-low rounded-xl p-6 flex flex-col skill-card hover:bg-surface-container-high cursor-pointer" onclick="openDetailModal(${skill.id})">
         <div class="flex justify-between items-start mb-4">
           <div class="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center">
             <span class="material-symbols-outlined text-primary">${skill.icon}</span>
@@ -483,10 +567,14 @@
           </div>
         </div>
         <h4 class="text-lg font-bold text-on-surface mb-2">${skill.name}</h4>
-        <p class="text-on-surface-variant text-sm mb-6 flex-1 line-clamp-3">${skill.desc}</p>
-        <button onclick="${openUrl}" class="install-btn w-full bg-surface-container-highest text-on-surface font-bold py-2.5 rounded-full text-xs hover:bg-primary/20 transition-colors ${isInstalled ? 'installed' : ''}">
-          ${skill.postUrl ? 'Open Post' : (isInstalled ? '✓ Installed' : 'Install')}
-        </button>
+        <p class="text-on-surface-variant text-sm mb-4 flex-1 line-clamp-3">${skill.desc}</p>
+        ${skill.pros?.length ? `<div class="flex flex-wrap gap-1 mb-4">${skill.pros.slice(0,2).map(p => `<span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full">✓ ${p.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`).join('')}</div>` : ''}
+        <div class="flex gap-2 mt-auto" onclick="event.stopPropagation()">
+          ${skill.postUrl ? `<a href="${skill.postUrl}" target="_blank" rel="noopener" class="flex-1 text-center bg-surface-container-highest text-on-surface font-bold py-2.5 rounded-full text-xs hover:bg-primary/20 transition-colors">Open Post</a>` : ''}
+          <button onclick="openInstallModal(${skill.id})" class="install-btn ${skill.postUrl ? '' : 'flex-1'} bg-surface-container-highest text-on-surface font-bold px-4 py-2.5 rounded-full text-xs hover:bg-primary/20 transition-colors ${isInstalled ? 'installed' : ''}">
+            ${isInstalled ? '✓ Installed' : 'Install'}
+          </button>
+        </div>
       </div>
     `;
   }
@@ -539,6 +627,155 @@
     localStorage.setItem('installed_skills', JSON.stringify(installed));
     closeModal();
     renderSkills();
+  }
+
+  function openDetailModal(skillId) {
+    const skill = skills.find(s => s.id === skillId);
+    if (!skill) return;
+    currentModalSkill = skill;
+
+    // Type badge
+    const effectiveType = (skill.type && skill.type !== 'Skills') ? skill.type : typeFromCategory(skill.category);
+    const typeColor = TYPE_COLORS[effectiveType] || TYPE_COLORS['Skills'];
+    const badge = document.getElementById('detail-type-badge');
+    badge.textContent = effectiveType;
+    badge.className = `text-[9px] font-bold px-2 py-0.5 rounded-full ${typeColor}`;
+    document.getElementById('detail-category').textContent = skill.category || '';
+    document.getElementById('detail-title').textContent = skill.name;
+    document.getElementById('detail-desc').textContent = skill.desc;
+
+    // Post image
+    const imgWrap = document.getElementById('detail-image-wrap');
+    const img = document.getElementById('detail-image');
+    if (skill.mediaUrl) {
+      img.src = skill.mediaUrl;
+      imgWrap.classList.remove('hidden');
+    } else {
+      imgWrap.classList.add('hidden');
+    }
+
+    // Pros
+    const prosSection = document.getElementById('detail-pros-section');
+    const prosList = document.getElementById('detail-pros');
+    if (skill.pros?.length) {
+      prosList.innerHTML = '';
+      skill.pros.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-2 text-sm text-on-surface-variant';
+        li.innerHTML = '<span class="text-emerald-400 mt-0.5 shrink-0">✓</span>';
+        const span = document.createElement('span');
+        span.textContent = p;
+        li.appendChild(span);
+        prosList.appendChild(li);
+      });
+      prosSection.classList.remove('hidden');
+    } else {
+      prosSection.classList.add('hidden');
+    }
+
+    // Cons
+    const consSection = document.getElementById('detail-cons-section');
+    const consList = document.getElementById('detail-cons');
+    if (skill.cons?.length) {
+      consList.innerHTML = '';
+      skill.cons.forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start gap-2 text-sm text-on-surface-variant';
+        li.innerHTML = '<span class="text-amber-400 mt-0.5 shrink-0">⚠</span>';
+        const span = document.createElement('span');
+        span.textContent = c;
+        li.appendChild(span);
+        consList.appendChild(li);
+      });
+      consSection.classList.remove('hidden');
+    } else {
+      consSection.classList.add('hidden');
+    }
+
+    // Community comments
+    const commentsSection = document.getElementById('detail-comments-section');
+    const commentsList = document.getElementById('detail-comments');
+    if (skill.comments?.length) {
+      commentsList.innerHTML = '';
+      skill.comments.forEach(c => {
+        const li = document.createElement('li');
+        li.className = 'text-sm text-on-surface-variant bg-surface-container rounded-lg px-3 py-2 border-l-2 border-outline-variant/40';
+        li.textContent = c;
+        commentsList.appendChild(li);
+      });
+      commentsSection.classList.remove('hidden');
+    } else {
+      commentsSection.classList.add('hidden');
+    }
+
+    // Install config
+    const configSection = document.getElementById('detail-config-section');
+    const configPre = document.getElementById('detail-config');
+    const config = MCP_CONFIGS[skill.name];
+    if (config) {
+      configPre.textContent = config;
+      configSection.classList.remove('hidden');
+    } else if (skill.postUrl) {
+      // Crawl result — generate a placeholder config based on name
+      const slug = skill.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      configPre.textContent = `"${slug}": {\n  "command": "npx",\n  "args": ["-y", "${slug}"]\n}`;
+      configSection.classList.remove('hidden');
+    } else {
+      configSection.classList.add('hidden');
+    }
+
+    // Open post link
+    const postLink = document.getElementById('detail-post-link');
+    if (skill.postUrl) {
+      postLink.href = skill.postUrl;
+      postLink.classList.remove('hidden');
+    } else {
+      postLink.classList.add('hidden');
+    }
+
+    // Install button state
+    const installBtn = document.getElementById('detail-install-btn');
+    installBtn.textContent = installed.includes(skillId) ? '✓ Installed' : 'Mark as Installed';
+    if (installed.includes(skillId)) {
+      installBtn.classList.add('opacity-70');
+    } else {
+      installBtn.classList.remove('opacity-70');
+    }
+
+    document.getElementById('detail-modal').classList.remove('hidden');
+    document.getElementById('detail-modal').classList.add('flex');
+  }
+
+  function closeDetailModal() {
+    document.getElementById('detail-modal').classList.add('hidden');
+    document.getElementById('detail-modal').classList.remove('flex');
+    currentModalSkill = null;
+  }
+
+  function installFromDetail() {
+    if (!currentModalSkill) return;
+    const id = currentModalSkill.id;
+    if (installed.includes(id)) {
+      installed = installed.filter(i => i !== id);
+    } else {
+      installed.push(id);
+    }
+    localStorage.setItem('installed_skills', JSON.stringify(installed));
+    const installBtn = document.getElementById('detail-install-btn');
+    const isNowInstalled = installed.includes(id);
+    installBtn.textContent = isNowInstalled ? '✓ Installed' : 'Mark as Installed';
+    installBtn.classList.toggle('opacity-70', isNowInstalled);
+    renderSkills();
+  }
+
+  function copyDetailConfig() {
+    const text = document.getElementById('detail-config').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('copy-toast');
+      toast.classList.remove('hidden');
+      toast.classList.add('flex');
+      setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 2000);
+    });
   }
 
   function copyConfig() {

@@ -171,6 +171,15 @@ export async function fetchSavedPosts({ limit = 100, includeReels = true } = {})
           el => el?.src || ''
         ).catch(() => '');
 
+        // Scrape visible comments (best-effort — Instagram uses dynamic class names)
+        const comments = await page.$$eval(
+          'ul li span[dir="auto"]',
+          (els) => els
+            .map(el => el.textContent?.trim())
+            .filter(t => t && t.length > 15 && !t.startsWith('#'))
+            .slice(1, 10) // skip first item (the caption itself)
+        ).catch(() => []);
+
         const hashtags = (caption.match(/#\w+/g) || []).map(h => h.toLowerCase());
         const shortcode = link.href.match(/\/(p|reel)\/([\w-]+)/)?.[2] || '';
 
@@ -178,6 +187,7 @@ export async function fetchSavedPosts({ limit = 100, includeReels = true } = {})
           id: shortcode,
           caption,
           hashtags,
+          comments,
           mediaUrl: imgSrc,
           postUrl: link.href,
           isReel: link.isReel,
