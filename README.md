@@ -2,7 +2,7 @@
 
 > ⚠️ **WIP — vibe-coded.** This project is actively being built in the open. Expect rough edges.
 
-A web app that crawls your Instagram saved posts, uses Claude AI to filter out MCP servers and AI skills, and exposes them via an MCP server so Claude can tell you what to install — without manually scrolling through hundreds of saves.
+A web app that crawls your Instagram saved posts, uses AI to filter out MCP servers and AI skills, and exposes them via an MCP server so Claude can tell you what to install — without manually scrolling through hundreds of saves.
 
 ---
 
@@ -16,10 +16,11 @@ A web app that crawls your Instagram saved posts, uses Claude AI to filter out M
 
 ## What it does
 
-1. **Crawls** your Instagram saved posts using a Playwright-based session scraper
-2. **Classifies** each post with Claude AI — filtering for MCP servers, Claude tools, AI frameworks, dev tools, and prompting techniques
-3. **Surfaces** results in a clean web dashboard
-4. **Exposes** findings via a local MCP server so you can ask Claude directly: *"what AI tools have I saved?"*
+1. **Crawls** your Instagram saved posts using a Playwright-based session scraper — including post captions, hashtags, and community comments
+2. **Classifies** each post with AI — filtering for MCP servers, Claude tools, AI frameworks, dev tools, and prompting techniques
+3. **Extracts pros & cons** from captions and real community comments for each tool
+4. **Surfaces** results in a clean web dashboard with a detail modal (pros, cons, community feedback, Claude Desktop config)
+5. **Exposes** findings via a local MCP server so you can ask Claude directly: *"what AI tools have I saved?"*
 
 ---
 
@@ -28,7 +29,7 @@ A web app that crawls your Instagram saved posts, uses Claude AI to filter out M
 - **Frontend** — vanilla HTML/CSS/JS with Tailwind CDN
 - **Backend** — Node.js + Express
 - **Scraper** — Playwright (headless Chromium)
-- **AI** — Anthropic Claude API (`claude-sonnet-4-6`)
+- **AI** — OpenRouter (free cloud, any model) or Ollama (on-device, no API key)
 - **MCP** — `@modelcontextprotocol/sdk`
 
 ---
@@ -39,7 +40,7 @@ A web app that crawls your Instagram saved posts, uses Claude AI to filter out M
 
 - Node.js 18+
 - An Instagram account with saved posts
-- An [Anthropic API key](https://console.anthropic.com)
+- An [OpenRouter API key](https://openrouter.ai) (free tier available) — or Ollama running locally (no key needed)
 
 ### Install
 
@@ -59,7 +60,7 @@ cd server && npm start
 # → http://localhost:3000
 ```
 
-Open the app, go to **Settings**, add your Instagram credentials and Anthropic API key, then hit **Initialize Sync** on the Crawl page.
+Open the app, go to **Settings**, add your Instagram credentials and OpenRouter API key (or select an Ollama model), then hit **Initialize Sync** on the Crawl page.
 
 ---
 
@@ -88,9 +89,9 @@ Then restart Claude Desktop. You can now ask:
 ## Security notes
 
 - Instagram credentials are stored in `localStorage` in your browser only — never sent to any third party
-- Session cookies are saved locally in `server/session.json` — gitignored
-- Crawl results are saved in `server/results.json` — gitignored
-- Your Anthropic API key is passed directly from browser to your local server — never leaves your machine
+- Session cookies are saved locally in `session.json` — gitignored
+- Crawl results are saved in `results.json` — gitignored
+- Your OpenRouter API key is passed directly from browser to your local server — never leaves your machine
 
 ---
 
@@ -109,9 +110,12 @@ Then restart Claude Desktop. You can now ask:
 
 - [x] Web UI (Crawl dashboard, Skill library, Settings)
 - [x] Backend server + SSE progress streaming
-- [x] Instagram Playwright scraper
-- [x] Claude AI classifier
+- [x] Instagram Playwright scraper (captions, hashtags, comments)
+- [x] AI classifier via OpenRouter or Ollama
+- [x] Pros/cons extraction from captions + community comments
+- [x] Detail modal with pros, cons, community feedback, Claude Desktop config
 - [x] MCP server with 3 tools
+- [x] Date range filtering, saved bookmarks, type tabs (MCP / Skills / Agents / Tips / News)
 - [ ] Auth persistence across restarts
 - [ ] Scheduled auto-crawl
 - [ ] Export to markdown / Notion
@@ -119,4 +123,4 @@ Then restart Claude Desktop. You can now ask:
 
 ---
 
-*Built with Claude Code. Vibe-coded in one session.*
+*Built with Claude Code.*
